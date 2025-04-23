@@ -32,7 +32,7 @@ def create_plot(ax, hist_values, pdf, title):
 
 def main():
     npoints = 100000
-    points1 = np.random.uniform(1e-8, 1 - 1e-8, npoints)
+    points1 = np.random.uniform(0, 1 - 1e-8, npoints)
     values1 = get_inv_cumul1(points1)
 
     points2 = np.random.uniform(0, 1, npoints)
@@ -44,6 +44,7 @@ def main():
     create_plot(ax2, values2, get_pdf2, r'$\frac{5}{243}x^4$' + f' ({npoints} points)')
 
     plt.tight_layout()
+    plt.savefig("./ex_1_2.svg")
     plt.show()
 
 if __name__ == '__main__':
