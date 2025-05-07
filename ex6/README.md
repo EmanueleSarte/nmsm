@@ -9,3 +9,5 @@ https://github.com/EmanueleSarte/nmsm/raw/refs/heads/main/ex6/ex_6_animation.mp4
 <video src='https://github.com/EmanueleSarte/nmsm/raw/refs/heads/main/ex6/ex_6_animation.mp4' />
 
 ![](/ex6/ex_6_animation.mp4)
+
+https://github.com/user-attachments/assets/cfadd151-d0e7-4ccc-b46e-97ec7326b4ba
