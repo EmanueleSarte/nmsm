@@ -1,3 +1,7 @@
+
+Animation for exercise 13 with dt = 0.2
+The animations are at 30 FPS, and each frame skips over 10 iterations, so basically 60 seconds of simulation are shown in 1 second.
+
 N = 50 
 
 https://github.com/user-attachments/assets/e90de8cd-8db0-41aa-a312-f5f12171637f
