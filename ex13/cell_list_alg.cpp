@@ -6,6 +6,7 @@
 #include <iostream>
 #include <random>
 #include <string>
+#include <chrono>
 
 using namespace std;
 
@@ -22,6 +23,13 @@ class NormalGenerator {
     std::default_random_engine gen_;
     std::normal_distribution<double> dis_;
 };
+
+double random01() {
+    static std::random_device rd;                           // Seed source
+    static std::mt19937 gen(rd());                          // Mersenne Twister RNG
+    static std::uniform_real_distribution<> dis(0.0, 1.0);  // Uniform in [0, 1)
+    return dis(gen);
+}
 
 struct AppData {
     int N;
@@ -42,6 +50,8 @@ struct AppData {
     double mu1;
     double mu2;
     double density;
+
+    bool save_particles;
 
     double **pos0;
     double **pos;
@@ -98,16 +108,28 @@ void compute_forces(AppData &dat) {
     static int offsets[5] = {0, 1, dat.ncellside - 1, dat.ncellside, dat.ncellside + 1};
     double dr[2];
     int ncell = pow(dat.ncellside, 2);
+    int ncs = dat.ncellside;
 
     memset(dat.forces[0], 0, sizeof(double) * dat.N * 2);
 
     // For every cell c1
     for (int c1 = 0; c1 < ncell; c1++) {
+        // cout << c1 << endl;
         if (dat.tag[c1] == false) continue;
+        int row1 = c1 / dat.ncellside;
+        int col1 = c1 % dat.ncellside;
 
         // For every lower right neighbors cell c2 of cell c1
         for (int idx2 = 0; idx2 < 5; idx2++) {
-            int c2 = (c1 + offsets[idx2]) % ncell;
+            int c2 = (c1 + offsets[idx2]);
+            int col2 = c2 % dat.ncellside;
+
+            if ((col1 == 0) && (col2 == ncs - 1)) continue;  // No c2 on the left if c1 is the first col
+            if ((col1 == ncs - 1) && (col2 == 0)) continue;  // No c2 on the right if c1 is the last col
+
+            int row2 = c2 / dat.ncellside;
+            if ((row1 == ncs - 1) && (row2 > row1)) continue;  // No c2 under if c1 is the last row
+
             if (dat.tag[c2] == false) continue;
 
             // For every particle of cell c1
@@ -131,15 +153,12 @@ void compute_forces(AppData &dat) {
                     }
 
                     j = dat.plist[j];
-                    // cout << "fineciclo2" << endl;
                 } while (j != -1);
 
                 i = dat.plist[i];
-                // cout << "fineciclo1" << endl;
             } while (i != -1);
         }
     }
-    // cout << "endlstop" << endl;
 }
 
 void update_position(AppData &dat, NormalGenerator &gen) {
@@ -185,10 +204,12 @@ void save_params_to_file(AppData &dat) {
     dat.stats_file.write(reinterpret_cast<const char *>(&dat.mu1), sizeof(dat.mu1));
     dat.stats_file.write(reinterpret_cast<const char *>(&dat.mu2), sizeof(dat.mu2));
     dat.stats_file.write(reinterpret_cast<const char *>(&dat.density), sizeof(dat.density));
+    dat.stats_file.write(reinterpret_cast<const char *>(&dat.save_particles), sizeof(dat.save_particles));
     dat.stats_file.write(reinterpret_cast<char *>(dat.tpar), dat.N * sizeof(dat.tpar[0]));
 }
 
 void save_particle_to_file(AppData &dat) {
+    if (!dat.save_particles) return;
     dat.stats_file.write(reinterpret_cast<char *>(dat.memory), dat.N * 2 * sizeof(dat.memory[0]));
 }
 
@@ -198,20 +219,14 @@ void run_simulation(AppData &dat) {
     save_particle_to_file(dat);
 
     for (int i = 1; i < dat.niters; i++) {
-        // cout << "qui1" << endl;
         compute_cell_list(dat);
-        // cout << "qui2" << endl;
-        // cout << i << endl;
         compute_forces(dat);
-        // cout << "qui3" << endl;
         update_position(dat, gen);
-        // cout << "qui4" << endl;
         save_particle_to_file(dat);
-        // cout << "qui5" << endl;
     }
 }
 
-void initialize_data(AppData &dat, int N, int niters, double dt, double ncellside) {
+void initialize_data(AppData &dat, int N, int niters, double dt, double ncellside, bool save_par) {
     dat.N = N;
     dat.niters = niters;
     dat.dt = dt;
@@ -230,6 +245,8 @@ void initialize_data(AppData &dat, int N, int niters, double dt, double ncellsid
     dat.D1 = dat.mu1 * dat.temp;
     dat.D2 = dat.mu2 * dat.temp;
     dat.density = dat.N / (dat.side * dat.side);
+
+    dat.save_particles = save_par;
 }
 
 void allocate_memory(AppData &dat) {
@@ -267,11 +284,32 @@ void deallocate_memory(AppData &dat) {
 }
 
 void assign_particles_type(AppData &dat) {
-    for (int i = 0; i < dat.N / 2; i++) {
-        dat.tpar[i] = 1;
-    }
-    for (int i = dat.N / 2; i < dat.N; i++) {
-        dat.tpar[i] = 2;
+    // for (int i = 0; i < dat.N / 2; i++) {
+    //     dat.tpar[i] = 1;
+    // }
+    // for (int i = dat.N / 2; i < dat.N; i++) {
+    //     dat.tpar[i] = 2;
+    // }
+
+    int nr1 = 0;
+    int nr2 = 0;
+    for (int i = 0; i < dat.N; i++) {
+
+        if (nr1 == (dat.N / 2)) {
+            dat.tpar[i] = 2;
+
+        } else if (nr2 == (dat.N / 2)) {
+            dat.tpar[i] = 1;
+
+        } else {
+            if (random01() < 0.5) {
+                dat.tpar[i] = 1;
+                nr1 += 1;
+            } else {
+                dat.tpar[i] = 2;
+                nr2 += 1;
+            }
+        }
     }
 }
 
@@ -293,24 +331,36 @@ void assign_particle_pos(AppData &dat) {
 int main(int argc, char const *argv[]) {
     AppData dat;
 
-    int N = 20;
     int niters = 200000;
-    double dt = 0.1;
+    int nsim = 6;
+    double dt = 0.2;
     int ncellside = 10;
-    initialize_data(dat, N, niters, dt, ncellside);
+    int narr[] = {10, 30, 50, 100, 200, 500};
+    bool save_par = true;
 
-    string filename = "ex11_N" + to_string(N) + "_M" + to_string(dat.niters) + ".bin";
+    string filename = "ex13_nsim" + to_string(nsim) + "_M" + to_string(niters) + ".bin";
     dat.stats_file.open("stats_" + filename, ios::out | ios::binary);
-    int nsim = 1;
     dat.stats_file.write(reinterpret_cast<const char *>(&nsim), sizeof(nsim));
 
-    allocate_memory(dat);
-    assign_particles_type(dat);
-    assign_particle_pos(dat);
+    auto start = std::chrono::high_resolution_clock::now(); // Line 1: Before the function call
+    for (int i = 0; i < nsim; i++) {
+        int N = narr[i];
 
-    run_simulation(dat);
+        initialize_data(dat, N, niters, dt, ncellside, save_par);
+
+        allocate_memory(dat);
+        assign_particles_type(dat);
+        assign_particle_pos(dat);
+
+        run_simulation(dat);
+
+        deallocate_memory(dat);
+    }
+
+    auto end = std::chrono::high_resolution_clock::now(); 
+    std::chrono::duration<double> duration = end - start;
+    std::cout << "Function execution time: " << duration.count() << " seconds" << std::endl;
 
     dat.stats_file.close();
-    deallocate_memory(dat);
     return 0;
 }
