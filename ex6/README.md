@@ -1,6 +1,9 @@
 Animation of simulating 5 betas = 0.5  1.25  2  2.75  3.5 
 
 The animation shows only beta = 0.5, 2 and 3.5
+
+NOTE: the chains in between are not shown, so there is no direct correlation in the swapping of one chain (unless there is a double swapping in the same direction, so it's visible in two of the animations)
+
 Suddenly changes in shape (especially at high beta) means a swap between chains has occurred:
 
 
