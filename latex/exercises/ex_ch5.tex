@@ -1,0 +1,107 @@
+\documentclass[../main.tex]{subfiles}
+\begin{document}
+\chapter{Exercises Lecture 5}
+
+\section{MC simulation of a 2D Ising model by the Metropolis algorithm}
+
+\noindent\textbf{Program} Write a program that simulates a 2D Ising model with periodic boundary conditions by using the Metropolis acceptance matrix $a_{ij}$ and the matrix $\Gamma_{ij}$ based on the local spin-flip (Glauber) proposed move.
+
+\noindent\textbf{Simulation} By assuming $kB = 1$ and $J = 1$ simulate the 2D Ising model for different values of temperatures (at least 3, one below, one above, and one close to the critical temperature $T_c = \frac{2}{\ln(1+\sqrt{2})}$ and 3 different
+values of L (for instance 25,50 and 100).
+
+\noindent\textbf{Equilibration time, averages and fluctuations} After having determined the equilibrium time and disregarding the samples for $t < \tau_{eq}$ estimate the ensemble averages of the magnetization per spin, the energy per spin, and the corresponding fluctuations (specific heat and magnetic susceptibility). 
+
+\noindent \textbf{Integrated correlation time and critical slowing-down} Estimate the autocorrelation time of the magnetization and the energy for the MC simulations proposed above and estimate the errors accordingly.
+
+\subsection{Solution}
+
+The energy of this 2D Ising model given a configuration of the spins $\mathcal{C}$ is:
+\begin{align}
+H(\mathcal{C}) &= -J \sum_{\langle i, j \rangle} \sigma_i \sigma_j \quad\quad\text{with } \sigma_i=\pm 1\quad \text{and}\quad \langle i, j \rangle\quad\text{it's a sum over n.n.}
+\end{align} At every step of the MC, all spins are selected in order and for each we calculate the energy difference if that spin is flipped as:
+\begin{align}
+\Delta E = 2J\sigma_i \sum_{{\langle j \rangle}_i}\sigma_j  \quad\quad\text{with } {\langle j \rangle}_i\ \text{the 4 neighbors of }\sigma_i
+\end{align} If $\Delta E < 0$ or $\exp{(-\Delta E)\beta}$ is bigger than a random number between [0, 1] then we accept the move and flip the spin (this is the Metropolis algorithm).
+
+For each MC steps, we calculate our observables: the energy and magnetization per site. After the system reaches equilibrium, the averages of the observable are calculated, from which we can calculate the specific heat and the magnetic susceptibility.
+\begin{align}
+    <E_{site}> = \frac{1}{t_{max}-\tau_{eq}}\frac{1}{L^2} \sum_{t=\tau_{eq}}^{t_{max}} H_t
+    \quad <m> = \frac{1}{t_{max}-\tau_{eq}}\frac{1}{L^2} \sum_{t=\tau_{eq}}^{t_{max}} M_t
+    \quad C_V = \frac{\text{Var[$E_{site}$]}}{k_B T^2}
+    \quad \chi_T = \frac{\text{Var[$m$]}}{k_B T}
+\end{align}
+
+We also calculated:
+\begin{itemize}
+    \item $\tau_{eq}$ the time the simulation reached the equilibrium
+    \item $\tau_O^{int}$ the integrated autocorrelation time which is:
+    \begin{align} 
+        \int_{0}^{t_{max}} \frac{C_O(t)}{C_O(0)} dt = \int_{0}^{t_{max}} e^{-t/\tau} dt = \tau_O^{int} = \sum_{t=0}^{t_{max}} \frac{C_O(t)}{C_O(0)}\Delta t
+    \end{align}
+    which tells us how distant we should sample $O$ to get uncorrelated samples ($C_O(t)$ is the autocorrelation function).
+    \item $S_{t_{max}}^2$ which tells us the variance of the mean of the observable $O$ and it is calculated as: \begin{align} 
+        S_{O}^2 = \frac{1+2\tau / \Delta t}{(t_{max} - \tau_{eq} - 1)} \sum_{t=\tau_{eq}}^{t_{max}} (O_t - \bar{O}_{t_{max}})^2.
+    \end{align}
+\end{itemize}
+
+A C++ program calculates the evolution of the spins on the lattice and writes them to a binary file at every step. Then a Python script reads it and analyzes the content.
+
+We run the program with 3 different lattice dimensions (side): 50, 100 and 200, and for 3 different values of temperature: $0.5T_c$, $0.97T_c$ and $1.2T_c$.
+
+The results are shown in table \ref{tab: es_5_1_ising}.
+
+\begin{table}[!ht]
+    \centering
+    \resizebox{\textwidth}{!}{%
+    \begin{tabular}{c| c c c| c c c| c c c}
+        \toprule
+        \multicolumn{10}{c}{\textbf{Results}}\\
+        \midrule
+          &\multicolumn{3}{c|}{$T=0.5\ T_c$} & \multicolumn{3}{c|}{$T=0.97\ T_c$} & \multicolumn{3}{c}{$T=1.2\ T_c$}\\
+          &$L=50$&$L=100$&$L=200$&$L=50$&$L=100$&$L=200$&$L=50$&$L=100$&$L=200$\\
+        \midrule
+    $<E_{site}>$    & -1.993 & -1.992   & -1.992   & -1.541& -1.546 & -1.546 & -0.95  & -0.9501  & -0.9501  \\
+    $<m>$           & -0.9981& -0.9981  & -0.998   & 0.7735& -0.7845&-0.7863 &$-1.37\cdot 10^{-3}$&$2.15\cdot 10^{-3}$& $2.37\cdot 10^{-4}$\\
+    $N_{steps}$     & 2000   & 2000     & 2000     & 16000 & 16000  & 16000  & 8000     & 8000     & 8000     \\
+    $C_V$           & 0.04523& 0.04791  & 0.05224  & 1.472 & 1.439  & 1.32   & 0.6411   & 0.5773   & 0.5829   \\
+    $\chi_T$        & 0.00363& 0.003803 & 0.004164 & 7.104 & 4.44   & 3.626  & 8.195    & 7.438    & 8.45     \\
+    $\tau_{eq}$     & 100    & 100      & 200      & 500   & 4600   & 9600   & 100      & 4200     & 800      \\
+    $\tau_E^{int}$  & 1.01   & 1.74     & 0.967    & 30.6  & 29.9   & 14.5   & 29.7     & 5.76     & 8.33    \\
+    $\tau_m^{int}$  & 0.967  & 1.03     & 0.857    & 27.6  & 75.6   & 45.9   & 15.6     & 8.04     & 6.95    \\
+    $S_{E}^2$       & $7.02 \cdot 10^{-5}$ & $2.76 \cdot 10^{-5}$& $4.93 \cdot 10^{-6}$ & $1.78 \cdot 10^{-1}$ & $4.25 \cdot 10^{-2}$  & $4.8 \cdot 10^{-3}$ & $1.148 \cdot 10^{-1}$& $5.36 \cdot 10^{-3}$ & $1.91 \cdot 10^{-3}$ \\
+    $S_{m}^2$         & $4.85 \cdot 10^{-6}$ & $1.32 \cdot 10^{-6}$& $3.21 \cdot 10^{-7}$ & $3.51 \cdot 10^{-1}$ & $1.49 \cdot 10^{-1}$ & $1.851 \cdot 10^{-2}$& $2.87 \cdot 10^{-1}$& $3.46 \cdot 10^{-2}$  & $8.57 \cdot 10^{-3}$ \\
+        
+        \bottomrule 
+     \end{tabular}}
+    \caption{Results for Ising 2D}
+    \label{tab: es_5_1_ising}
+\end{table}
+
+We also show some images for $L=200$ of the $E_{site}$ and $m$ for the three temperatures: figure \ref{fig: ex_5}.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}{.45\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_5_under_tc.svg}
+        % \caption{A subfigure}
+        % \label{fig:sub1}
+    \end{subfigure}
+    \begin{subfigure}{.45\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_5_near_tc.svg}
+        % \caption{A subfigure}
+        % \label{fig:sub2}
+    \end{subfigure}
+    \begin{subfigure}{.45\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_5_over_tc.svg}
+        % \caption{A subfigure}
+        % \label{fig:sub2}
+    \end{subfigure}
+    \caption{Energy and magnetization for three systems with $L=200$ and different temperatures. The red line is when the equilibrium was reached (for both quantities).}
+    \label{fig: ex_5}
+\end{figure}
+
+On github are available also the animation from $t=0$ to $t\approx \tau_{eq}$: \href{https://github.com/EmanueleSarte/nmsm/tree/main/ex5}{here}.
+\end{document}

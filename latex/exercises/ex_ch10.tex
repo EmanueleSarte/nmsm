@@ -1,0 +1,127 @@
+\documentclass[../main.tex]{subfiles}
+\begin{document}
+\chapter{Exercises Lecture 10}
+
+
+\section{Interaction potentials \& thermostats - Canonical fluctuations (pen\&paper)}
+Show that the fluctuations of the temperature of the system, as defined in class, in the canonical ensemble are
+\[
+\frac{\sigma_{T_K}^2}{\langle T_K \rangle^2} = \frac{\langle T_K^2 \rangle - \langle T_K \rangle^2}{\langle T_K \rangle^2} = \frac{2}{3N}
+\]
+
+\subsection{Solution}
+Since we know that:
+\begin{align}
+    T_k = \frac{1}{3Nk_B}\sum_i m_iv_i^2 = \frac{2E_k}{3Nk_B} \implies \langle T_k\rangle = \frac{2\langle E_k \rangle}{3Nk_B}\quad \text{and}\quad \sigma_O^2 = \langle O^2 \rangle - \langle O \rangle^2
+\end{align} then
+\begin{align}
+   \frac{\sigma_{T_K}^2}{\langle T_K \rangle^2} = \frac{4}{9N^2 k_B^2}\frac{\langle E_k^2 \rangle - \langle E_k \rangle^2}{\langle T_K \rangle^2}
+\end{align} now, since we are in the canonical ensemble, we know that
+\begin{align}
+    \sigma^2_E = \langle E_k^2 \rangle - \langle E_k \rangle^2 = k_BT^2\frac{\partial  \langle E_k \rangle}{\partial T} 
+\end{align}so then
+\begin{align}
+   \frac{\sigma_{T_K}^2}{\langle T_K \rangle^2} = \frac{4}{9N^2 k_B^2}\frac{k_BT_K^2\frac{\partial  \langle E_k \rangle}{\partial T_K} }{\langle T_K \rangle^2} = \frac{4}{9N^2 k_B^2} \frac{3Nk_B^2T_K^2}{2T_K^2} = \frac{2}{3N}
+\end{align}
+\newpage
+
+\section{Interaction potentials \& thermostats - Lennard-Jones fluid in different ensembles}
+Note: This exercise can be carried out with LAMMPS.
+
+Simulate $N$ particles of mass $m=1$ in a cubic box of length $L$ (with periodic boundary conditions). The particles interact with each other through a Lennard-Jones (LJ) potential
+\[
+V_{LJ}(r) = 4\epsilon \left[ \left( \frac{\sigma}{r} \right)^{12} - \left( \frac{\sigma}{r} \right)^{6} \right]
+\]
+where $\sigma = 1$ and $\epsilon = 1$. Choose $L=10\sigma$ and $\rho = N/V = 0.2\sigma^{-3}$. Integrate the equations of motion with the Velocity Verlet algorithm.
+
+Generate a suitable initial condition. Choose one of the two strategies introduced in one of the previous exercises. Draw the initial velocity distribution from the equilibrium (Maxwell-Boltzmann) distribution at $T^* = 1$, enforcing the total momentum to zero.
+
+\begin{itemize}
+    \item \textbf{NVE ensemble:} Simulate the system without a thermostat. Check the effect of the cut-off radius: perform different simulations, increasing the cut-off from $r_c = 2^{1/6}\sigma$ to $r_c = 4\sigma$ with steps $\Delta r_c = 0.2\sigma$ (round the numbers to the first decimal place after the first one). After equilibration (if needed), compute the radial distribution function to compare the different cases.
+    \item \textbf{NVT ensemble:} Introduce now a thermostat, picking one non-canonical (Velocity rescaling or Berendsen) and one canonical (Andersen or Nose-Hoover - Note: the latter can be done in LAMMPS). Simulate again the same LJ system as in the previous exercise. Fix the reference temperature of the heat bath $T^* = 2$. Integrate the equations of motion with the Velocity Verlet algorithm. Compute the kinetic energy and verify that, in both cases, the average is consistent with the equipartition theorem ($\langle E_K \rangle = 3/2 N k_B T$ upon varying the number of particles in the system (keeping the box size fixed); keep $\rho \leq 0.2$. Check that the fluctuations of the temperature are consistent/not consistent with the canonical ensemble upon varying the number of particles in the system as above.
+\end{itemize}
+
+\subsection{Solution}
+
+Since the density and the volume are specified, this set $N=200$. For the initial configuration of the positions, we put 20 particles for each layer of z (with $\Delta z = 0,1\sigma,2\sigma,...$). In each layer, the 20 particles are in a rectangle 4x5 with $\Delta x = \Delta y = 2\sigma$ and starting in ($2\sigma, 1\sigma$). We did that because we did not want random positions that could lead to very close distances and so very high velocities that could lead to instability, so we spread them out like a lattice. The velocity vector components are sampled from $\mathcal{N}(0, \sqrt{T})$, so that the norm of those vectors follows the Maxwell-Boltzmann distribution (with $T=1$). All the simulation were done with $\Delta t = 10^{-2}$ and with $10^5$ iterations.
+
+\noindent\textbf{Microcanonical ensemble (NVE)} To calculate the pair correlation function $g(r)$ we used:
+\begin{align}
+    g(r) =  \frac{1}{4\pi r^2} \frac{V}{N^2}\sum_{i=0}^{N-1} \sum_{j=0}^{N-1} \delta(r-r_{ij}) \approx \frac{1}{4\pi r^2} \frac{V}{N^2}\sum_{i=0}^{N-1} \sum_{j=0}^{N-1} \frac{1}{\sqrt{2\pi}\sigma_g} \exp\left(-\frac{1}{2}\frac{(r-r_{ij})^2}{\sigma_g^2}\right)
+\end{align}For approximating $\delta$ we used a gaussian centered in $r$ with $\sigma_g=0.02$. The values for $g(r)$ are then averaged over the last 50 iterations to smooth them out. We plot the results of the simulation of this ensemble in figure \ref{fig: ex_10_nve_gleft} and \ref{fig: ex_10_nve_gright} with different values of the cutoff value $\sigma_c$.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{.99\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_10_nve_gleft.svg}
+    \end{subfigure}
+    \caption{Pair correlation function $g(r)$ for different values of $\sigma_c$ in the NVE ensemble. Here are shown only the points between $r=0.75$ and $r=1.75$.}
+    \label{fig: ex_10_nve_gleft}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{.99\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_10_nve_gright.svg}
+    \end{subfigure}
+    \caption{Pair correlation function $g(r)$ for different values of $\sigma_c$ in the NVE ensemble. Here are shown only the points between $r=1.5$ and $r=4$.}
+    \label{fig: ex_10_nve_gright}
+\end{figure}
+
+First we note the presence of a peak in $r=2^{1/6}$, the minimum of the potential, which means that particles tends to cluster with an average distance of $2^{1/6}$. This peak is not present when $\sigma_c$ is set to $2^{1/6}\sigma$. This is expected because we are not considering anything after the minimum of the potential, so there is only the repulsive part and no incentive for the particles to bond together. As soon as we increase the cutoff, the peaks starts to appear because now the potential has a proper minimum with an attractive and repulsive part. Also there seems to be an oscillating behavior with the peaks getting higher at around $\sigma_c = 2.2,\ 2.7$ and $3.5$. After the peak, the function is the same for all the cutoffs fluctuating around 1.
+\newline
+\newline
+\textbf{Canonical ensemble (NVT)} For this simulation we used the velocity rescaling and the Andersen thermostat. We still initialized the particles as before: even if $N$ is changing we put the particles in the same lattice-like positions as before, starting filling them from the z-layer 0 and up until we ran out of particles. As cutoff we choose $\sigma_c=4$. We kept the volume the same and we just decrease the number of particles (so $\rho \le0.2$ ). 
+
+\noindent For the velocity rescaling, the results are in table \ref{tab: ex_10_nvt_vresc}. As expected there is perfect agreement between the theoretical and the simulated kinetic energy, since we are rescaling the velocities to have the desired temperatures. Also the fluctuations of the temperature are 0 because as before we are rescaling the velocities to have that particular temperature.
+
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{ccccc}
+        \toprule
+        \multicolumn{5}{c}{\textbf{NVT Ensemble with Velocity Rescaling at $T^*=2$}}\\
+        \midrule
+        $N$     & $\langle E_k^{th}\rangle$ & $\left(\frac{\sigma^2_{T_k}}{\langle T_k\rangle^2}\right)^{th}$ & $\langle E_k^{sim}\rangle$ & $\left(\frac{\sigma^2_{T_k}}{\langle T_k\rangle^2}\right)^{sim}$\\
+        \hline
+        25      & 75  & 0.027  & 75.0  & $< 10^{-10}$  \\
+        50      & 150 & 0.013  & 150.0 & $< 10^{-10}$ \\
+        75      & 225 & 0.0089 & 225.0 & $< 10^{-10}$ \\
+        100     & 300 & 0.0067 & 300.0 & $< 10^{-10}$ \\
+        125     & 375 & 0.0053 & 375.0 & $< 10^{-10}$ \\
+        150     & 450 & 0.0044 & 450.0 & $< 10^{-10}$ \\
+        175     & 525 & 0.0038 & 525.0 & $< 10^{-10}$ \\
+        200     & 600 & 0.0033 & 600.0 & $< 10^{-10}$ \\
+        \hline
+    \end{tabular}
+    \caption{Results for the NVT Ensemble with the Velocity rescaling thermostat}
+    \label{tab: ex_10_nvt_vresc}
+\end{table}
+
+\noindent Instead for the Andersen thermostat, we used $\omega=0.05/\Delta t$ because then the probability to reset the velocity of a particle is $p=\omega \Delta t = 0.05$. So on average $5\%$ of the particles are chosen to have its velocity sampled from the Maxwell-Boltzmann distribution with $T^* = 2$. The results are shown in table \ref{tab: ex_10_nvt_andersen}. The results are in good agreement with the theoretical ones. Also in this case there are fluctuations since we are setting the velocities of only $5\%$ of the particles, the others are left free to interact and change its energy.
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{ccccc}
+        \toprule
+        \multicolumn{5}{c}{\textbf{NVT Ensemble with Andersen Thermostat at $T^*=2$}}\\
+        \midrule
+        $N$     & $\langle E_k^{th}\rangle$ & $\left(\frac{\sigma^2_{T_k}}{\langle T_k\rangle^2}\right)^{th}$ & $\langle E_k^{sim}\rangle$ & $\left(\frac{\sigma^2_{T_k}}{\langle T_k\rangle^2}\right)^{sim}$\\
+        \hline
+        25  & 75  & 0.027  & 75.11 & 0.026 \\
+        50  & 150 & 0.013  & 150.0 & 0.013 \\
+        75  & 225 & 0.0089 & 225.1 & 0.0091 \\
+        100 & 300 & 0.0067 & 300.0 & 0.0067 \\
+        125 & 375 & 0.0053 & 375.3 & 0.0054 \\
+        150 & 450 & 0.0044 & 450.4 & 0.0044 \\
+        175 & 525 & 0.0038 & 525.9 & 0.0038 \\
+        200 & 600 & 0.0033 & 599.1 & 0.0034 \\
+        \hline
+    \end{tabular}
+    \caption{Results for the NVT Ensemble with the Andersen thermostat}
+    \label{tab: ex_10_nvt_andersen}
+\end{table}
+
+\end{document}

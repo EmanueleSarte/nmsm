@@ -1,0 +1,110 @@
+\documentclass[../main.tex]{subfiles}
+\begin{document}
+\chapter{Exercises Lecture 3}
+
+\section{Importance Sampling}
+Estimate the integral
+\begin{align}
+    \int_0^{\frac{\pi}{2}}\sin(x)dx
+\end{align}
+by
+\begin{itemize}
+    \item The crude Monte Carlo method
+    \item The importance sampling technique using a g(x) proportional to $a+bx^2$
+\end{itemize}
+Determine the optimal values of the parameters $a$ and $b$ to generate samples according to $g(x)$ and establish the number of iterations $N$ needed to get an accuracy of $\%1$. Compare $N$ with the number of iterations required to obtain the same accuracy for the crude Monte Carlo method.
+
+\subsection{Solution}
+The crude MC was easy to implement. Instead, finding the best $a$ and $b$ for the importance sampling was a bit more time consuming. Finding something similar to $\sin(x)$ with a quadratic term was a bit unexpected (especially without the linear term), in fact last year there was a similar exercise but with $\cos(x)$ instead of $\sin(x)$. In any case, the first idea was to use the Taylor series of the sine to find the best $x_0$ in the given interval:
+\begin{align}
+   T_{x_0}(x) &= \sin(x_0) + \cos(x_0)(x-x_0) - \frac{\sin(x_0)}{2}(x^2 + x_0^2 -2x_0x) \\
+    &= \left(\sin(x_0) + x_0\cos(x_0) -  \frac{x_0^2\sin(x_0)}{2}\right) + x\left(\cos(x_0) + x_0\sin(x_0)\right) + x^2\left(-\frac{\sin(x_0)x^2}{2} \right)
+\end{align}
+We want the constant term to be $a$ and the quadratic term to be $b$. Since we don't want the linear term, we must impose
+\begin{align}
+   \cos(x_0) + x_0\sin(x_0) = 0 \implies \tan(x_0) = -\frac{1}{x_0}
+\end{align} Sadly there are no solution for $x_0 \in [0, \pi/2]$.
+So we decided to find instead $g(x)$ in the form of $a+bx+cx^2$. Since $g(x)$ must be a PDF, $g(x) \ge 0$. Let's try to see what happens by requiring $g(0) \ge 0$:
+\begin{align}
+  g(0) = a = \sin(x_0) + x_0\cos(x_0) -  \frac{x_0^2\sin(x_0)}{2} \overset{!}{\ge} 0 \implies \\
+  \sin(x_0)\left( 1-\frac{x_0^2}{2}\right) \ge x_0\cos(x_0) \implies \tan(x_0) \ge \frac{2x_0}{2-x_0^2}
+\end{align} which sadly has only one solution in the given interval: $x_0=0$.
+This implies $a = c = 0$ and $b=1$: the only Taylor's series which has $g(0) \ge 0$ in $[0, \pi/2]$ is $x_0 = 0$ which is the well know $\sin(x) \approx x +\ ...$.
+
+So we are now back to the starting point. Let's use $g(x) = a + bx^2$ now, and let's find $a$ such that $g(x)$ is normalized:
+\begin{align}
+   \int_0^{\pi/2} (a+bx^2)dx \overset{!}{=} 1 \implies a = \frac{2}{\pi}\left(1-\frac{b\pi^3}{24}\right)
+\end{align}
+Now let's require that $g(0) \ge 0$ and $g(\pi/2) \ge 0$:
+\begin{align}
+   g(0) \ge 0 \implies b \le \frac{24}{\pi^3} \approx 0.774\\
+   g(\pi/2) \ge 0 \implies b \ge -\frac{12}{\pi^3} \approx -0.387
+\end{align} (it can be shown that $g(x)$ does not change sign in the interval given, so if the extremes are $\ge 0$ then all $g(x)$ is).
+This gives us a range for the parameter $b$. We would like to find the $b$ which minimize:
+\begin{align}
+   \int_0^{\pi/2} |\sin(x) - a(b) - bx^2|dx
+\end{align} but this seems a bit too much given that we want to calculate $\int_0^{\pi/2} \sin(x)dx$.
+So by using a graphic calculator we decided to use $b=0.45$ because it seems to approximate better the sine for the importance sampling. (In figure \ref{fig: ex_3_1_graph_calc} we put both curves for comparison).
+
+\begin{figure}[ht!]
+    \centerline{\includegraphics[width=0.45\columnwidth]{./imgs/ex_3_1_graph_calc.PNG}}
+    \caption{}
+    \label{fig: ex_3_1_graph_calc}
+\end{figure}
+
+We then proceeded to find the iteration at which the deviation is $\le 1\%$. The deviation is the absolute difference between the true value of 1 and the calculated value. We ran the experiment 1000 times to get the average iteration. We also added $g(x) = \frac{384}{48\pi^2-\pi^4}\left(x-\frac{x^3}{6}\right)$, the third degree Taylor expansion in $x=0$ normalized.
+\begin{verbatim}
+Average iteration Crude MC: 18.68
+Average iteration Importance Sampling (a+bx^2): 11.86
+Average iteration Importance Sampling (Third degree Taylor): 2.51
+\end{verbatim} If we iterate for 10M:
+\begin{verbatim}
+Crude MC estimate: 1.00016334, err: 0.00016334
+Importance Sampling estimate (a+bx^2): 1.00006674, err: 6.67401449e-05
+Importance Sampling estimate (Third degree Taylor): 0.99999275, err: 7.24293925e-06
+\end{verbatim}
+
+
+\section{Importance Sampling}
+Let us compute the average
+\begin{align}
+    \langle f \rangle_\rho = \int_\mathbb{R} f(x)\rho(x)dx
+\end{align}where $\rho \in \mathcal{N}(0,1)$ and
+\begin{align}
+    f(x) = e^{-(x-3)^2/2} + e^{-(x-6)^2/2}
+\end{align}
+\begin{itemize}
+    \item Show that $\langle f \rangle_\rho$ can be computed in closed form and derive its value.
+    \item Construct a regular Monte Carlo approximation based on a normal distribution $\mathcal{N}(0,1)$ by sampling $N=10^3$ points and estimate the corresponding error.
+    \item Compare the above result with the one obtained using the importance sampling approximation based on the uniform distribution $g \in U[-8, -1]$. Use again $N=10^3$ samples.
+\end{itemize}
+
+\subsection{Solution}
+First, let's calculate $f(x)\rho(x)$:
+\begin{align}
+   f(x)\rho(x) &=  \frac{e^{-x^2/2}}{\sqrt{2\pi}}\left( e^{-(x-3)^2/2} + e^{-(x-6)^2/2} \right) = \frac{1}{\sqrt{2\pi}}\left( e^{-\frac{1}{2}(2x^2+9-6x)} + e^{-\frac{1}{2}(2x^2+36-12x)} \right)\\
+   &= \frac{e^{-9/4}}{\sqrt{2\pi}} e^{-\frac{1}{2}\frac{(x-3/2)^2}{1/2}} + \frac{e^{-9}}{\sqrt{2\pi}} e^{-\frac{1}{2}\frac{(x-3)^2}{1/2}}
+\end{align} so basically it's a gaussian with $\mu=3/2$ and $\sigma^2 = 1/2$ since $e^{-9/4} \gg e^{-9}$. Then $\langle f \rangle_\rho$ will be:
+\begin{align}
+    \langle f \rangle_\rho &= \int_\mathbb{R} f(x)\rho(x)dx = \frac{e^{-9/4}}{\sqrt{2\pi}} \int_\mathbb{R} e^{-\frac{1}{2}\frac{(x-3/2)^2}{1/2}} +  \frac{e^{-9}}{\sqrt{2\pi}} \int_\mathbb{R} e^{-\frac{1}{2}\frac{(x-3)^2}{1/2}} \\
+    &= \frac{e^{-9/4}}{\sqrt{2\pi}} \int_\mathbb{R} e^{-(x-3/2)^2} +  \frac{e^{-9}}{\sqrt{2\pi}} \int_\mathbb{R} e^{-(x-3)^2} \\
+    &= \frac{e^{-9/4}}{\sqrt{2\pi}} \int_\mathbb{R}e^{-y^2}dy +  \frac{e^{-9}}{\sqrt{2\pi}} \int_\mathbb{R} e^{-y^2}dy = \frac{e^{-9/4}}{\sqrt{2}} + \frac{e^{-9}}{\sqrt{2}}
+\end{align}
+We now use the regular Monte Carlo approximation sampling to approximate $\langle f \rangle_\rho$ (with $\rho(x)=\mathcal{N}(0,1)$):
+\begin{align}
+    \langle f \rangle_\rho \approx \frac{1}{N} \sum^N f(x_i)\quad \text{with}\quad x_i \sim \mathcal{N}(0,1)
+\end{align}
+Instead, for the importance sampling, we have $\rho=\mathcal{N}(0,1)$ and $g(x) = \mathcal{U}[-8, -1]$:
+\begin{align}
+    \langle f \rangle_\rho &= \int_\mathbb{R} f(x)\rho(x)dx = \int_\mathbb{R} f(x)\frac{\rho(x)}{g(x)}g(x)dx = \int_\mathbb{R}F(x)g(x)dx =  \\
+    &= \langle F \rangle_g \approx \frac{1}{N} \sum^N f(x_i)\frac{p(x_i)}{g(x_i)}\quad \text{with}\quad x_i \sim \mathcal{U}[-8, -1]
+\end{align}Note that the domain should be $\mathbb{R}$ but we are limited to $[-8, -1]$ so we are actually calculating $\int_{-8}^{-1}f(x)\rho(x)dx$ .
+
+\begin{verbatim}
+Estim. value with regular MC: 0.074478, dev: 0.000138 (true value: 0.074616)
+Estim. value with importance sampling: 1.484e-05, dev: 3.263e-07 (true value: 1.51648e-05)
+\end{verbatim}
+The two results are not comparable because when we use the regular MC with $\rho=\mathcal{N}(0,1)$ even if is not centered around $3/2$ its tails can reach every point (before vanishing) of $\rho(x)f(x)$. Instead, in the case of importance sampling, by using $g(x) = \mathcal{U}[-8, -1]$ we restrict ourselves to a specific interval, and so the results show different things.
+
+
+\end{document}

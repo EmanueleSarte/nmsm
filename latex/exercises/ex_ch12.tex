@@ -1,0 +1,86 @@
+\documentclass[../main.tex]{subfiles}
+\begin{document}
+\chapter{Exercises Lecture 12}
+
+\section{Exercise on the Multiple Histogram Method (MHM)}
+
+Choose a model with a phase transition. The standard choice is the grafted polymer model of Lesson 6. Otherwise, you should describe the model in the submitted notes. Temperature $T$, or better, its inverse $\beta$ (with $k_B=1$), is a parameter whose variation leads to a change in the phase of the system.
+
+Implement the MHM to compute the energy variance per degree of freedom, $C(\beta) = \frac{1}{N} (\langle E^2 \rangle - \langle E \rangle^2)$ (proportional to the specific heat, $C_{sp} = \beta^2 C = N^{-1}\partial_T \langle E \rangle$). The following procedure assumes that the model follows a finite-size scaling close to the critical point at $\beta_c$,
+
+$$ C(\beta) = N^{2\phi-1}f\left( (\beta - \beta_c)N^\phi \right)$$
+
+The scaling function $f$, in this case, has a maximum, i.e. a "peak".
+
+For different system sizes $N$, compute $C_N(\beta)$ for a fine mesh of $\beta \in [0, \beta_{\text{max}}]$ covering the finite-size proxy of the phase transition of the model, which is the peak of $C_N(\beta)$. Find peaks' position $\beta_N$ and plot them as a function of $N^{-\phi}$ with crossover exponent $\phi$ to be determined by trying to align points in the $y = \beta_N$ vs $x = N^{-\phi}$ diagram. For the grafted polymers, a $\phi = 1/2$ should work fine.
+
+Try to extrapolate the infinite-size limit $\beta_c$ from the trend of $\beta_N$ vs $N^{-\phi}$ points. This method has a single parameter $\phi$. Including finite-size corrections amounts to fit points $y = \beta_N$ with $y(x(N)) = N^{-\phi}(1 + AN^{-\Delta}) = x(1+Ax^{\phi\Delta})$ including a second parameter $A$.
+
+
+\subsection{Solution}
+
+The model used to implement the MHM is the Ising Model of Lesson 5. The model has periodic boundary condition and there is no external magnetic field. This model was chosen because the energy it's always an integer and it is usually decently spread (unless when we are too far to the left of $T_c$). Since the energy can takes only integer numbers, it's easy to count the occurrences of all the energy values, and there is only one trivial way to make the binning. Once we have binned the energy, we use the histogram version of the formula of the MHM. The alternative would be to not compute any histogram, but then we would have to cycle over every sample of the energy when computing the quantities and the observables with this method. Usually you do this because you want to avoid choosing the binning, but in this case there is only one (trivial) binning! Also, the data can also be aggregated together and then the occurrences for each energy is calculated (automatically by the Python library). This speeds up the computation a lot, instead of cycling over $M^{\text{nsim}}$ values, you cycle over less than thousand values (usually).
+
+The formula used to calculate the $Z_k$ (iteratively) is:
+\begin{align}
+    Z_{k}=\sum_{E} \frac{ N(E)}{M\sum_{j} Z_{j}^{-1} e^{\left(\beta_{k}-\beta_{j}\right) E}}
+\end{align} and analogous equation were used to calculate $Z(\beta)$ and $O(\beta)$. The number of iteration $M$ is equal for every simulation.
+
+We noticed how important is to get the energy distribution overlapping a lot, otherwise a lot of over and under flow would appear when calculating all the parameters. This restrained the choices for the initial $\beta$s to be very close to each others, and thus close to $\beta_{c}$, since we are more interested in that region.
+
+Our choice of $L$s, the sides of the grid, is $L=20, 30, 40, ..., 100$ and $N=L^2$. For each $L$ we  simulate the system with different 10 temperatures close to the theoretical critical temperature. All simulation are computed for 200000 steps, but the first 10000 points are discarded.
+
+Then we proceed to calculate $Z_k$ iteratively with the convergence criterion and the rescaling by:
+\begin{align}
+A=\left[\min _{k}\left(Z_{k}\right) \max _{k}\left(Z_{k}\right)\right]^{-1 / 2}    
+\end{align}
+After calculating $Z_k$ we can calculate $Z(\beta)$ for a fine mesh of $\beta$s and 
+\begin{align}
+    C^{\text{sp}}(\beta) =  \frac{\beta^2}{N}\left(\left\langle E^{2}\right\rangle-\langle E\rangle^{2}\right) \stackrel{MHM}{=} \frac{\beta^2}{N}\left(E^2(\beta) -  (E(\beta))^2\right)
+    \label{eq: csp}
+\end{align} where
+\begin{align}
+    E^2(\beta)= \frac{1}{Z(\beta)} \sum_{E} \frac{ E^2 \cdot N(E)}{M\sum_{j} Z_{j}^{-1} e^{\left(\beta_{k}-\beta_{j}\right) E}} &&
+    E(\beta)=\frac{1}{Z(\beta)}\sum_{E} \frac{ E \cdot N(E)}{M\sum_{j} Z_{j}^{-1} e^{\left(\beta_{k}-\beta_{j}\right) E}}
+\end{align} and
+\begin{align}
+    Z(\beta)= \sum_{E}  \frac{N(E)}{M\sum_{j} Z_{j}^{-1} e^{\left(\beta_{k}-\beta_{j}\right) E}}
+\end{align}
+
+We can also calculates $C^{\text{sp}}$ without the MHM method (as seen in the middle of \eqref{eq: csp}) to compare them. First let's show the overlapping between then distribution of energy for the different $T$s. In figure \ref{fig: ex_12_overlap} we can see the overlapping of three energy distribution for two values of $L$; there is a good overlapping.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}{.49\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_12_overlapping_histos_2.svg}
+    \end{subfigure}
+    \begin{subfigure}{.49\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_12_overlapping_histos.svg}
+    \end{subfigure}
+    \caption{Overlapping distribution of the energy for two different $L$ and three different temperatures.}
+    \label{fig: ex_12_overlap}
+\end{figure}
+
+Now let's plot $C^{\text{sp}}(\beta)$ for a fine mesh of $\beta$s and compare them with the one calculated directly with all the energies and the theoretical $T_c$. The graph is shown in figure \ref{fig: ex_12_all_peaks}, and the $\beta$s are converted in temperatures.
+
+
+\begin{figure}[ht!]
+    \centerline{\includesvg[width=0.99\columnwidth]{/imgs/ex_12_all_peaks.svg}}
+    \caption{Plot of $C(\beta)$ for a fine mesh of $\beta$s around the interesting zone. In reality here are plotted the temperatures, so the reciprocal of $\beta$s. The dots are $C(\beta^*)$ calculated directly with the energies by the definition (without MHM), $\beta^*$ are the temperatures used in the simulation. The vertical lines is the theoretical $T_c$ for this model: $T_c=2/\ln({1+\sqrt{2}})$.}
+    \label{fig: ex_12_all_peaks}
+\end{figure}
+
+It's easy to get the $\beta$ where the curve is at the maximum, since the peak is very clear. With all the $\beta_{\text{peak}}$ and the respective $N$, we calculate the crossover exponent $\phi$. We have a range of possible $\phi$s, and for each we calculate the linear regression for $x=N^{-\phi}$ and $y=\beta_{\text{peak}}$. Then we calculate the y-residuals squared as:
+\begin{align}
+    Res = \sum_i (y_i - (mx_i + q))^2
+\end{align} and we choose the line with the lowest residuals. By doing that we find the crossover exponent $\phi = 0.915$ and the intercept $q=0.441$ (figure \ref{fig: ex_12_line}). The latter tells us the value of $\beta_{c,\ L=\infty}$ assuming the trend given by the line holds. $\beta_{c,\ L=\infty}$ is the critical temperature (its inverse) for a system with $L \rightarrow \infty$, $T_{c,\ L=\infty} =2.268$, which compared to theoretical one $T_c=2/\ln({1+\sqrt{2}})=2.269$ is in good agreement.
+
+\begin{figure}[ht!]
+    \centerline{\includesvg[width=0.99\columnwidth]{/imgs/ex_12_line.svg}}
+    \caption{Best $\phi$ which makes the best line passing through the points $\beta_{peak}$.}
+    \label{fig: ex_12_line}
+\end{figure}
+
+\end{document}

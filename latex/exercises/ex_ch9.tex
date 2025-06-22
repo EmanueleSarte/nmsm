@@ -1,0 +1,130 @@
+\documentclass[../main.tex]{subfiles}
+\begin{document}
+\chapter{Exercises Lecture 9}
+
+
+\section{Integration schemes}
+\textbf{The harmonic oscillator} Implement the Velocity Verlet algorithm and the predictor-corrector algorithm.
+Consider the harmonic oscillator
+\begin{equation}
+\frac{dq}{dt} = p, \quad \frac{dp}{dt} = -\omega^2 q.
+\end{equation}
+The exact solution of $p(t)$ vs $\omega q(t)$ we get a circular orbit in phase that rotates by an amount of $\omega \Delta t$ at
+every time step. Considering this system, compare the two algorithms implemented above in terms of i)
+energy conservation, plotting $(E(t) - E_0) / E_0$ vs $t$, $E_0$ being the initial total energy ii) discrepancy with the
+analytical solution as a function of time. Verify that the Velocity Verlet is stable (i.e. it follows the analytical
+solution) for $\omega \Delta t < 2$ checking a few values of $\omega$ (e.g. $\omega = 0.01, 1, 100$).
+
+\subsection{Solution}
+
+Since:
+\begin{align}
+    \frac{d^2q}{{dt}^2} = \frac{dp}{dt} = -\omega^2q \implies q(t) = A\sin(\omega t + \varphi)\\
+    p= \frac{dq}{dt}\implies p(t) = A\omega\cos(\omega t + \varphi)
+\end{align}with $A$ and $\varphi$ chosen by setting the initial conditions:
+\begin{align}
+    q(t_0=0) \stackrel{!}{=} 0 \implies q(0) = A\sin(\varphi) = 0 \implies \varphi = 0\\
+    p(t_0=0) \stackrel{!}{=} 1 \implies p(0) = A\omega\cos(0)=1 \implies A=\frac{1}{\omega}
+\end{align}
+
+We implemented the Velocity Verlet algorithm and the predictor-corrector Beeman's algorithm. We first plotted, for both methods, the difference in energy with the exact energy as a function of time to see if the energy is conserved. The results are shown in figure \ref{fig: ex_9_energy}.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{.45\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_9_energy_diff.svg}
+    \end{subfigure}
+    \begin{subfigure}{.45\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_9_energy_diff_long.svg}
+    \end{subfigure}
+    \caption{The discrepancy between the two methods as function of time.}
+    \label{fig: ex_9_energy}
+\end{figure}
+
+The energy is conserved after 100000 iterations and the magnitude of the error is the same for both algorithm. If we instead compare the $q(t)$ and $p(t)$ with the analytical solution (by plotting the difference between the two) we obtain the graphs in figure \ref{fig: ex_9_comparison}.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{.45\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_9_q_diff.svg}
+    \end{subfigure}
+    \begin{subfigure}{.45\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_9_q_diff_long.svg}
+    \end{subfigure}
+    \begin{subfigure}{.45\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_9_p_diff.svg}
+    \end{subfigure}
+    \begin{subfigure}{.45\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_9_p_diff_long.svg}
+    \end{subfigure}
+    \caption{Comparing $q(t)$ and $p(t)$ with the analytical value, with two different timescales.}
+    \label{fig: ex_9_comparison}
+\end{figure}
+
+For $q(t)$ the error is a bit different for the two methods, but then they overlap pretty nicely in all the others graphs. We can see that the errors is slowly building up as we increase the number of steps.
+
+Lastly we check how stable is the solution of the Velocity Verlet as $\omega\Delta t$ get close to 2. To to that, we plot the graph $p(t)$ versus $q(t)$. Analytically, with the exact solution, we  have (remember that $A = 1/\omega$):
+\begin{align}
+    q(t) = \frac{1}{\omega}\sin(\omega t)\quad p(t) = \cos(\omega t)
+    \implies  q(t)^2 + p(t)^2\ \text{is an ellipse with radius } r_x=1/\omega \text{, } r_y = 1
+\end{align}so we compare the shape of the algorithm with the ellipse. To avoid plotting all the path we plot the last 10 revolutions of the Velocity Verlet (and the ellipse). A revolution is when $\omega t$ ranges from 0 to $2\pi$, so if we want the last 10 revolutions, we just plot the last $N_{10rev}$ points:
+\begin{align}
+    N_{10rev} = 10 \cdot \frac{2\pi}{\omega} \cdot \frac{1}{\Delta t}
+\end{align} the results are shown in the following figures (the algorithm ran for 50000 iterations and we are looking at the last $N_{10rev}$). From the figures, we can see that until $\omega=20$ and so $\omega\Delta t = 0.2$, the shapes are the same as the analytical solution. From $\omega=50$  ($\omega\Delta t=0.5$) we can see the trajectories going a bit off, the Velocity Verlet algorithm is calculating the positions and the velocities for timestep too big so it cannot follow smoothly  the circle and some little spikes appear. At $\omega=100$  ($\omega\Delta t=1$) the timestep is so big that in 6 iteration goes around the circle: the angle between the lines is getting closer and closer to 0, but the points are still bounded. At $\omega=200$ ($\omega\Delta t = 2$) the algorithm just bounces between two points. With any $\omega > 200$ the algorithm quickly overflows to infinity, and it's hard to plot anything meaningful.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{.42\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_9_stability_1.svg}
+    \end{subfigure}
+    \begin{subfigure}{.42\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_9_stability_10.svg}
+    \end{subfigure}
+    \label{fig: ex_9_stability1}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{.42\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_9_stability_20.svg}
+    \end{subfigure}
+    \begin{subfigure}{.42\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_9_stability_50.svg}
+    \end{subfigure}
+    \label{fig: ex_9_stability2}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{.42\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_9_stability_75.svg}
+    \end{subfigure}
+    \begin{subfigure}{.42\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_9_stability_100.svg}
+    \end{subfigure}
+    \label{fig: ex_9_stability3}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{.42\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_9_stability_197.svg}
+    \end{subfigure}
+    \begin{subfigure}{.42\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_9_stability_200.svg}
+    \end{subfigure}
+    \label{fig: ex_9_stability4}
+\end{figure}
+
+\end{document}

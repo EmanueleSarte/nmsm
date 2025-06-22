@@ -1,0 +1,207 @@
+\documentclass[../main.tex]{subfiles}
+\begin{document}
+\chapter{Exercises Lecture 6}
+
+
+\section{Exercise on multiple Markov chains (MMC)}
+
+Simulate the absorption of a grafted polymer to an attractive hard wall with a Monte Carlo using the MMC
+method. The model for the polymer is composed of $N+1$ monomers in the two-dimensional plane, with
+coordinates $\vec{r_{i}}=(x_{i},y_{i})$ for $0\le i\le N$.
+
+\subsection*{Geometry}
+
+\begin{itemize}
+    \item Grafting is imposed by fixing $(x_{0},y_{0})=(0,0)$.
+
+    \item Self-avoidance between any monomers i and j is imposed by requiring $|\vec{r}_{i}-\vec{r}_{j}|>c$ with $c=1$ 
+
+    \item The chain connectivity is achieved by requiring each bond length $l_{i}=|\vec{r}_{i}-\vec{r}_{i+1}|$ to fluctuate within
+    the interval $[l^\text{min}, l^{\text{max}}]$ with say $l^{\text{min}}=c$ and $l^{\text{max}}=1.3c.$ 
+
+    \item The hard wall constraint imposes $y_{i}\ge0$ for each monomer i.
+\end{itemize}
+
+\subsection*{Thermodynamics}
+
+\begin{itemize}
+    \item The attraction between the wall on the monomers derives from an energetic contribution $-\epsilon=-1$ to each monomer with $y_{i}<h$ say with $h=1/2.$ We may neglect the trivial constant contribution from the grafted monomer i = 0. Thus, the total energy of a configuration $\mathcal{C}$ is $E(\mathcal{C})=-\epsilon n$ where n is the number of monomers in $\mathcal{C}$ with $y_{i}<h$.
+    \item Each polymer is in a canonical ensemble at its own inverse temperature $\beta\ge0$ ($\beta$'s will be different;    see the MMC scheme below).
+\end{itemize}
+
+\subsection*{Monte Carlo moves}
+
+\begin{itemize}
+    \item Local shifts: choose a displacement $\vec{\delta}$ from a symmetric distribution (e.g., a Gaussian around zero or
+    an appropriate uniform distribution) and try to displace a randomly picked monomer $\vec{r}_{i}\rightarrow\vec{r}_{i}+\vec{\delta}.$ If
+    the geometric constraints are not satisfied, reject the move; otherwise, accept the new configuration $\mathcal{C}^{\prime}$ 
+    according to the Metropolis rule at B.
+
+    \item Pivot: choose a monomer $p$ at random in the range $0\le p\le N-1$ and rotate the monomers
+    with $i>p$ pas a rigid body with respect $\vec{r}_{p}$ of an angle  drawn randomly from an interval $[-\theta^{*},\theta^{*}]$.
+    Again, after checking if the geometry is fine, accept the move to $\mathcal{C}^{\prime}$ according to the Metropolis rule.
+    Note that the difference in energy $E(\mathcal{C}^{\prime})-E(\mathcal{C})$ depends only on the changes for $i>p$.
+\end{itemize}
+
+\subsection*{MMC}
+
+\begin{itemize}
+    \item Choose a reasonable set of K inverse temperatures $\{\beta_{k}\}$, in python or C language indexed from $k=0$ to $k=K-1$ at larger $\beta^{\prime}s$, the polymer should be mostly absorbed; at small $\beta$ it should float freely; at a critical $\beta_{c}$, it should display the largest fluctuations in energy and other geometrical indicators.
+
+    \item We do not want to copy configurations in a swap because it takes $2\times N\times2$ operations. It is convenient to track which configuration belongs to a given $\beta_{k}$ using an array of indices I. Initially $I=(I_{0}=$ 0 $,I_{1}=1,...,I_{K-1}=K-1)$ Then, each time there is a swap at k, $k+1$, only indices swap:    
+    $(I_{0},I_{1},...,I_{k}=A,$ $,I_{k+1}=B,...,I_{K-1})\rightarrow(I_{0},I_{1},...,I_{k}=B$ $I_{k+1}=A,...,I_{K-1})$ 
+
+    In this scheme, the moves at $\beta_{k}$ act on its current configuration, stored at position $I_{k}$ This is the first index in a multidimensional matrix (the second is the monomer index i, where its ( $(x_{i},y_{i})$ are found).
+    In summary, at $\beta_{k},$ we have $r(I_{k},i,0)$ for the $x_{i}$ of the configuration and $r(I_{k},i,1)$ for yi.
+
+    \item As a typical recipe, for every $\beta_{k}$, a block of moves contains one attempted pivot and N attempted local shifts. Furthermore, one swap between configurations at neighboring $\beta_{k}$ and $\beta_{k+1}$ (with randomly picked $k\in[0,K-2])$ should be attempted at the end of the K blocks. This recipe is by no means rigid;  it is just an example.
+
+    Between samplings, B blocks of moves should be performed to decorrelate data sufficiently.
+
+    \item To monitor the state of the system, evaluate:
+    \begin{itemize}
+        \item The average energy $U(\beta)=\langle E\rangle_{\beta}$ and its variance $VU(\beta)=\langle E^{2}\rangle_{\beta}-\langle E\rangle_{\beta}^{2}.$ 
+        \item The mean squared end-to-end distance $R_{e}^{2}(\beta)=\langle|\vec{r}_{N}|^{2}\rangle_{\beta},$ its variance $VR_{e}^{2}(\beta)$.
+        \item     The mean height of the end, $Y_{e}(\beta)=\langle y_{N}\rangle_{\beta},$ and its variance $VY_{e}(\beta)$.
+    \end{itemize}
+
+\end{itemize}
+
+\subsection*{Questions}
+
+\begin{enumerate}
+    \item Show the energy histograms for all $\beta_{k}$ in the same plot. Is there a good overlap between histograms of neighboring $\beta_{k}$? What was the logic for settling down to a final list of $\beta^{\prime}s$ after your initial attempts?
+
+    \item Plot the listed quantities as a function of $\beta$  for a given $N$ or many $N^{\prime}s$. Do the plots meet your expectations? Is there any signature of the critical temperature?
+
+    \item What did you find an appropriate distribution for the random displacements in the local shifts?
+
+    \item Why do we use a symmetric interval $[-\theta^{*},\theta^{*}]$ in the pivot move? Should $\theta^{*}$ depend on $\beta$ ?
+
+    \item Given the same B blocks of moves at all $\beta_{k}$ how does the autocorrelation in data vary with $\beta$ ?
+\end{enumerate}
+
+\newpage
+\subsection{\underline{Solution}}
+To simulate the problem we have chosen 
+\begin{itemize}
+    \item $l^{min} = c=1$, the diameter of the monomers and $l^{max} = 1.3c = 1.3$,
+    \item $\theta^* = \pi/8$,
+    \item $N$, the number of monomers excluding the first, equals to 25, 50, 75, 100, 150 and 200
+    \item $K=30$, the number of different polymers chains,
+    \item $n_{shift}=10$ the number of shifts for each pivot (the number of shifts per block),
+    \item $n_{block} = 100$  the number of blocks between each sample,
+    \item $n_{iters}$ the number of samples (it changes depending of $N$)
+\end{itemize}
+To be clear, one block consists of updating all the $K$'s chains, after $n_{block}$ a sample is taken from each chain. So, between two samples from the same chain, $n_{shift}\cdot n_{block}$ shifts and $n_{block}$ pivots are attempted. The swap between two chains is attempted before sampling.
+The Metropolis rule, respectively for the local move and the chain swap, is
+\begin{align}
+    p_{\mathcal{C}\mathcal{C^{\prime}}} = \text{min}\left(1, e^{-\beta\Delta E}\right) &&     p_{\pmb{\mathcal{C}\mathcal{C^{\prime}}}} = \text{min}\left(1, e^{\Delta\beta\cdot\Delta E}\right)
+\end{align}
+
+\noindent The first thing was to plot the histograms of the energy for different sets of $\beta$'s without any chain swapping to have an idea of what is happening. The results are shown in figure \ref{fig: ex_6_hist_no_swap} ($N=100$ and $N_{iters}=10000$).
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{.45\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_6_hist_noswap_low_betas.svg}
+        % \caption{A subfigure}
+        % \label{fig:sub1}
+    \end{subfigure}
+    \begin{subfigure}{.45\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_6_hist_noswap_mid_betas.svg}
+        % \caption{A subfigure}
+        % \label{fig:sub2}
+    \end{subfigure}
+    \begin{subfigure}{.45\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_6_hist_noswap_high_betas.svg}
+        % \caption{A subfigure}
+        % \label{fig:sub2}
+    \end{subfigure}
+    \caption{Histograms of the energies for different sets of $\beta $s \underline{without chain swapping}. If the values are very low (high temperature, first image) they all display the same spectrum of energy. In the other two cases the histograms are more separated. Notice how the highest $\beta$s are not always associated with the lower energies. The images are vector images (they are zoom friendly).}
+    \label{fig: ex_6_hist_no_swap}
+\end{figure}
+
+The first image clearly tells us that those $\beta$'s are too low, so the temperature is very high and there is basically no absorbing behavior. Instead, in the other two images, the histograms are more distributed. It is interesting to note that the lowest temperatures are not always associated with the lowest energies, usually because the polymer is stuck at a local minimum of the energy. In fact, in figure \ref{fig: ex_6_nochain_heatmap} are shown all the shapes assumed by the polymer (with transparency) and the average position of its monomers; it got stuck in a local minimum and never recovered from it.
+
+
+\begin{figure}[H]
+    \centerline{\includegraphics[width=0.55\columnwidth]{./imgs/ex_6_nochain_heatmap.png}}
+    \caption{Heatmap of the position of the monomers for a low temperature with $N=100$ for $\beta=2.4$ as seen in the second image of figure \ref{fig: ex_6_hist_no_swap}. By comparing this with that figure(where the lower $\beta=2.2$ easily reach $E=-45$), it is clear that this is stuck in a local minimum of the energy. The full flat position has less energy but to reach it requires passing by configurations at  higher energy and at this low temperature is extremely unlikely.}
+    \label{fig: ex_6_nochain_heatmap}
+\end{figure}
+
+If instead we add the possibility of chain swapping (excluding the sets of low betas), the results are more as expected, with lowest temperature chains associated with the lowest energies.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{.49\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_6_hist_swap_mid_betas.svg}
+    \end{subfigure}
+    \begin{subfigure}{.49\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_6_hist_swap_high_betas.svg}
+    \end{subfigure}
+    \caption{Histograms of the energies for different sets of $\beta $s \underline{with chain swapping}. The sets are the second and third sets from the previous histograms (figure \ref{fig: ex_6_hist_no_swap}). Here we can see the trend of lower temperatures associated with higher energies.  The images are vector images (they are zoom friendly).}
+    \label{fig: ex_6_hist_swap}
+\end{figure}
+
+
+We need to decide some ranges of $\beta$s. It has been suggested that the distribution of the energy of each $\beta$s should overlap between the neighbors for $\approx20\%$. If the $\beta$'s are closer to each other, they tend to overlap more, so it would be natural to choose a spacing that accounts for that. We have preferred to choose closer $\beta$s even if they overlap a lot because we would like to have a lot of point in a particular range of temperatures. We decided that is better to swap more than swap less, and also it is worth notice that only one chain is swapped at random before sampling all the chains. Bigger $K$ means that chains are in general swapped less frequently, so also this should be take in account when deciding the percentage of swapping.
+
+The range we have chosen is $\beta_i = 2/3 + 0.12\cdot i$ with $i \in [0, 29]$, so $\beta_{29} \approx 4.15$, because we saw a signature of a phase transition in that range.
+The initial configuration for every polymer was the one with every monomer stacked one on top of the other at $x=0$. Then we proceeded to calculate the mean values for the observables and put them in figure \ref{fig: ex_6_mean_obs}. In figure are shown the lines for different values of $N$. The second row shows the same observables but the one on the right is divided by $N$.
+
+\begin{figure}[H]
+    \begin{subfigure}{.49\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_6_mean_energies.svg}
+        % \caption{A subfigure}
+        % \label{fig:sub1}
+    \end{subfigure}
+    \begin{subfigure}{.49\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_6_mean_heights.svg}
+        % \caption{A subfigure}
+        % \label{fig:sub2}
+    \end{subfigure}
+    \begin{subfigure}{.49\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_6_mean_distances.svg}
+        % \caption{A subfigure}
+        % \label{fig:sub2}
+    \end{subfigure}
+        \begin{subfigure}{.49\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_6_mean_distances_norm.svg}
+        % \caption{A subfigure}
+        % \label{fig:sub2}
+    \end{subfigure}
+    \caption{In the first row are shown the mean energies with the mean heights of the last monomer. In the second row are shown the mean distances of the chains; the one on the right is the same plot but the distances are divided by $N$. In theory the maximum distance could be $N\cdot l^{max}=1.3N$} but there is no incentive in being longer (one could says that it's easier to get less entangled, that's true), only the energy matters and so dividing by $N$ is enough!
+    It is very clear from the images on the right that there is a critical point around $\beta=1.5$.
+    \label{fig: ex_6_mean_obs}
+\end{figure}
+
+We prefer showing the distance and not the squared distance, specifically the norm of the vector starting in (0, 0) and ending in the center of the last monomer. We did this because the plot on the bottom left can be visualized better; in both cases, the trend stays.
+There is a clear mark of a critical point, especially in the bottom right image. It is not exactly an order parameter because it is not 0 before the critical point, but there is potential to find a better one by shifting it by the average distance when there is no absorbing wall.
+
+About the distribution of the local shifts, we have chosen to go simple by using an uniform distribution $\mathcal{N}(-\frac{3c}{4}, \frac{3c}{4})$. Going more than $0.75c$ was just wasteful because it is very close to the maximum stretch possible. Given this distribution, if we have 3 monomers aligned horizontally, the one in the middle can stretch vertically up to $y=0.75c$ which make the distances between the others equals to $\frac{5c}{4} = 1.25c$ that is very close to the maximum allowed of $1.3c$ . Obviously this distribution could also be gaussian with a very low deviation, to make small but likely legal moves, but we have chosen simplicity given all the degrees of freedom of the problem.
+
+Instead, about the $\theta^*$ we have chosen to draw it uniformly from the interval $[-\pi/8, \pi/8]$, there is not a specific reason but allowing bigger angles would have caused a lot of illegal moves.
+
+It makes sense to be symmetric because there is no reason to prefer one side or the other given the symmetry of the problem. Unless, we consider some potential between the monomers which make them attractive and thus creating a bias 
+
+As suggested would make sense to make $\theta^* = \theta^*(\beta)$ because higher temperatures mean higher fluctuations in energy and so bigger movements (bigger angles). I would also personally suggest to make $\theta^*$ dependent on the index of the monomers: a pivot closer to the origin means moving all the other monomers which should costs more and so be less probable. On the opposite, bigger rotations should be more likely near the end of the polymer.
+
+Instead, I would add the move ``global shift'': select a random monomers $p$, then select an uniform value between $[-0.1c, 0.25c]$. This value should be added to the actual distance between the $p$ and the $p+1$ monomer (keeping the direction the same), thus rigidly shifting all the monomers which come after. 
+
+By doing some testes, the autocorrelation tends to increase as $\beta$ increases.
+
+
+An animation can be seen \href{https://github.com/EmanueleSarte/nmsm/blob/main/ex6/README.md}{here on Github}. 
+
+\end{document}

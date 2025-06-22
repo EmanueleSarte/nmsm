@@ -1,0 +1,85 @@
+\documentclass[../main.tex]{subfiles}
+\begin{document}
+\chapter{Exercises Lecture 13}
+
+\section{Exercise on the cell list}
+
+Simulate N Brownian particles in a two-dimensional box of size $B\times B$, with reflective boundary conditions. Each particle has position $\vec{x}_{i}=(x_{i}^{0},x_{i}^{1})$ and follows the time-discretized Euler-Maruyama dynamics with increments
+$$d\vec{x}_{i}=\mu_{i}\vec{F}_{i}(x)dt+\sqrt{2D_{i}}\vec{B}_{i}$$
+with time step dt, mobility $\mu_{i}$, diffusion constant $D_{i}$, force $\vec{F}_{i}(x)$ depending on all particles' positions $x=(\vec{x}_{0},...,\vec{x}_{N-1})$. Each component of the Gaussian white noise term $\mathcal{B}_{i}^{\alpha}$ $(\alpha=0,1)$ is drawn from a zero-mean normal distribution with variance $\sqrt{dt}$.
+
+Each pair of particles interacts with a repulsive potential energy depending on their distance $r_{ij}=|\vec{x}_{i}-\vec{x}_{j}|$ and a reference distance $\sigma_{ij}$:
+$$U(r_{ij})=\varepsilon~e^{-r_{ij}^{2}/(2\sigma_{ij}^{2})}$$
+We assign a radius $R_{i}$ to each particle and set $\sigma_{ij}=R_{i}+R_{j}$. Note that $U(|\vec{r}|)$ yields a central force $\vec{F}_{U}(|\vec{r}|)\hat{r}$. We cutoff this force at $r_{c}=4\sigma_{ij}$ (i.e., it is set to zero for $r>r_{c}$). The total force $F_{i}$ on each particle is a sum of $F_{U}$ pairwise forces with other particles in its surroundings.
+
+To introduce thermodynamics and physics at a temperature T (with $k_{B}=1)$, we set $D_{i}=\mu_{i}T$, and mimic Stokes' law by setting $\mu_{i}=1/R_{i}$.
+
+The goal of this exercise is simulating this system also for large N values. To this end, implement the cell list algorithm.
+
+With everything in place, study the diffusivity as a function of the number density $\rho=N/B^{2}$. Specifically, study the mean square displacement along the x-direction, $\Delta(t)=\langle[x^{0}(t)-x^{0}(0)]^{2}\rangle$ for different $\rho$ values. Usually, such quantity is plotted as a function of t in a log-log diagram. For low $\rho$, the mean square displacement should follow $2D_{i}t$ up to a saturation due to the finite box size. For large $\rho$, the behavior should be more complex, effectively with lower diffusivity and possibly with plateaus due to particles' caging. Such effect emerges if neighboring particles do not move much due to the high density and constrain the observed particle to remain caged for some time in a region. For large $\rho$, the system would cristallize if all $R_{i}$ are the same. We avoid this by choosing $R_{i}=R^{A}$ for half of the particles and $R_{i}=R^{B}\ne R^{A}$ for the other ones.
+\newline
+\textbf{Parameters:}\newline
+\begin{itemize}
+    \item $B=100$
+    \item $R_{i}=R^{A}=1.25$ for $0\le i<N/2$ (particles of kind A)
+    \item $R_{i}=R^{B}=1$ for $N/2\le i<N$ (particles of kind B)
+    \item $T=1$ 
+    \item $\varepsilon=10$ 
+    \item A possible list of N to have $\rho$ over some orders of magnitude is $N=2,10,50,200$ and maybe 500.
+\end{itemize}
+
+\begin{enumerate}
+    \item Which side $\ell$ for the cell in the cell list do you choose with these parameters?
+    \item Is $\Delta^{A}(t)$ for particles A different from $\Delta^{B}(t)$ for particles B?
+    \item How do $\Delta$'s change with $\rho$?
+\end{enumerate}
+
+\subsection{Solution}
+
+The implementation of our algorithm for cell list is the same as seen during the lesson, but when we actually use it to calculate the force we approach the iteration in a different way. One could, for each particle, find the candidate neighbors with the cell list structure, calculate the distance, check if it is under the cutoff, calculate the force and then proceed to the next particle. Instead we select the first cell $c_1$, then for every of its neighbor cells $c_2$ we do all the comparison between the particles $p_i$ inside $c_1$ with the particles $p_j$ inside $c_2$. Then we move to the next cell and repeat the process. Also, since we don't want to recalculate things, we can visit only the lower right part (4 out of 8 and the cell itself, visiting 5 cells in total) in the same way with the Ising model we visit only two nearest neighbors out of four with the condition $i < j$. In figure \ref{fig: ex_13_cell_explain} there is an example of which neighbors every cell visits. 
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{.99\textwidth}
+        \centering
+        \includegraphics[width=0.99\columnwidth]{./imgs/ex_13_cell_explain.png}
+    \end{subfigure}
+    \caption{Example of 5x5 cell system. For each particles inside cell 12, we compare them with all the particles inside cells 13, 16, 17 and 18. We don't compare them with particles in cells 6, 7, 8 and 11 because we already did those comparison when we were at those cells in the previous steps.}
+    \label{fig: ex_13_cell_explain}
+\end{figure}
+All of this makes sense because we have an array $f_i$ of the force each particle $p_i$ experiences. So every time we make a comparison between $p_i$ and $p_j$ we calculate $F_{ij}$ and we add it in $f_i$, but also we add $-F_{ij} = F_{ji}$ in $f_j$. At the end of the cells iteration, each $f_i$ will contain the sum of all the forces exerting on $p_i$. After calculating the forces, we then update the positions using those forces.
+
+The choice of the side $\ell$ for the cell was made such that all the possible particles interacting with a cell are only the particles in the neighbors cells (and the cell itself). Since the biggest interaction is for particles of type $A$, with a $\sigma_{AA} = 4 \cdot 2 \cdot R^A = 10$, the cell side need to be at least 10. Since the side of the box is 100, then was trivial to choose 100 cells in total with side  $\ell=10$.
+
+
+About the initial condition, the particles are arranged in a square grid with spacing $\lceil\sqrt{N}\rceil$. They type is instead assigned at random (keeping the 50\% - 50\% ratio). In figure \ref{fig: ex_13_time0} are shown the initial configuration for $N=200$ and $N=500$.
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}{.49\textwidth}
+        \centering
+        \includesvg[width=0.89\columnwidth]{/imgs/ex_13_time0_distr_200.svg}
+    \end{subfigure}
+    \begin{subfigure}{.49\textwidth}
+        \centering
+        \includesvg[width=0.89\columnwidth]{/imgs/ex_13_time0_distr_500.svg}
+    \end{subfigure}
+    \caption{Initial configuration for $N=200$ and $N=500$ respectively. The types are assigned at random, given $N$ the positions are fixed. The radius of the particles is not to scale with the box, but the relative radius between the two types is correct.}
+    \label{fig: ex_13_time0}
+\end{figure}
+
+The simulation is done for 200000 iterations with $\Delta t = 0.2$ for $N=30, 50, 100, 200, 500$. The total time for these 5 simulations is $\approx 65$ seconds with a raw binary output of 2.63GB (all the positions at each time are stored).
+
+In figure \ref{fig: ex_13} is shown how the $\Delta$ changes (for the x-position of the particles) for different $\rho$'s ($\rho = N/V)$ and for the two different types of particles as a function of time. Note that this plot had some processing applied to make it (more) readable. Since the time increases linearly, the points on a log-log graph tend to accumulate on the right. To avoid having half of the points in a fraction of the image, the following was applied. First the image was divided in 500 columns of equal size, then the points inside were averaged to produce one point. This was done only if the column had more than 3 points inside (practically, this means that the method was applied only after a certain x).
+
+\begin{figure}[ht!]
+    \centerline{\includesvg[width=0.99\columnwidth]{/imgs/ex_13_density_msd.svg}}
+    \caption{Plot of the MSD of the x-position of the particles for different $N$ and for the two types. Some processing was applied to the graph to avoid the accumulation of the points to the right, as written in the text.}
+    \label{fig: ex_13}
+\end{figure}
+
+The only big difference is seen with $N=500$ where the mean square displacement increase very rapidly until it reach the equilibrium value. Probably this happens because of the initial configuration of the grid, where all the particles are too close to each others, and thus receiving bigger push on average. Can also be seen that the smaller particles (type B) have consistently smaller MSD, but if we look at the others simulation this is not true. 
+
+Three animations are available \href{https://github.com/EmanueleSarte/nmsm/blob/main/ex13/README.md}{here}  on GitHub.
+
+
+\end{document}
+

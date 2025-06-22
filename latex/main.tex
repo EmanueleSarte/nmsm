@@ -1,0 +1,101 @@
+%\documentclass{article}
+%\usepackage{graphicx} % Required for inserting images
+
+%\documentclass[11pt,twoside]{book}
+
+\documentclass[11pt, twoside]{book}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+% \usepackage[inkscapelatex=false, svgpath=.]{svg}
+\usepackage[inkscapelatex=false]{svg}
+\svgpath{.}
+    
+\usepackage[svgnames,hyperref]{xcolor} 
+\usepackage{epsfig}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
+
+\usepackage{amsmath,amsthm,amssymb,mathrsfs,amsfonts,dsfont}
+\usepackage{tabularx}
+
+\usepackage{multicol} % two-col ToC
+\usepackage{bm}
+\usepackage{imakeidx} % before hyperref
+\usepackage{hyperref}
+% link colors settings
+\hypersetup{
+    colorlinks=true,
+    citecolor=magenta,
+    linkcolor=blue,
+    filecolor=green,
+    urlcolor=cyan,
+    % hypertexnames=false,
+}
+\usepackage{mathtools}
+\usepackage{physics}
+
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+
+% adjust margin
+\usepackage[margin=2.3cm]{geometry}
+\headheight13.6pt
+
+% figures inside text
+\usepackage{wrapfig}
+
+\usepackage{titlesec}
+\titleformat{\chapter}{}{}{0em}{\bf\LARGE} %remove chapter N
+
+\usepackage{subfiles} % Best loaded last in the preamble
+
+
+\newcommand{\CC}{\mathcal{C}}
+
+
+\title{Exercises NMSM 2024-2025}
+\author{Emanuele Sarte - 2097419}
+\date{June 2025}
+
+\begin{document}
+
+
+\setcounter{chapter}{0}
+
+
+\maketitle
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\frontmatter
+
+\chapter{Introduction}
+This document contains the solution for the exercises of the course Numerical Methods for Soft Matter (year 2024 - 2025) at University of Padova. All the code can be found on GitHub \href{https://github.com/EmanueleSarte/nmsm/tree/main}{here} together with the images, this document, the source of this document and some animations. Most of the images are vector images, but in some cases (because of million of points) a raster image was put instead.
+
+\tableofcontents
+
+%\mainmatter
+\subfile{exercises/ex_ch1}
+\subfile{exercises/ex_ch2}
+\subfile{exercises/ex_ch3}
+\subfile{exercises/ex_ch4}
+\subfile{exercises/ex_ch5}
+\subfile{exercises/ex_ch6}
+\subfile{exercises/ex_ch7}
+\subfile{exercises/ex_ch8}
+\subfile{exercises/ex_ch9}
+\subfile{exercises/ex_ch10}
+\subfile{exercises/ex_ch11}
+\subfile{exercises/ex_ch12}
+\subfile{exercises/ex_ch13}
+
+%\setcounter{chapter}{5}
+
+
+
+
+
+\end{document}
+

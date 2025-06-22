@@ -1,0 +1,313 @@
+\documentclass[../main.tex]{subfiles}
+\begin{document}
+\chapter{Exercises Lecture 4}
+
+\section{Markov chains}
+Draw the digraphs and classify the states of the Markov chains defined by the following transition matrices:
+\[
+(A)\quad P=
+\begin{pmatrix}
+0 & 0 & 0.5 & 0.5 \\
+1 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 \\
+0 & 1 & 0 & 0
+\end{pmatrix},
+\quad\quad
+(B) \quad P =
+\begin{pmatrix}
+0.3 & 0.4 & 0 & 0 & 0.3 \\
+0 & 1 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0.6 & 0.4 \\
+0 & 0 & 0 & 0 & 1 \\
+0 & 0 & 1 & 0 & 0
+\end{pmatrix}
+\]
+
+\subsection{Solution}
+
+The digraphs are:
+
+\begin{figure}[htbp]
+    \begin{minipage}[b]{0.5\textwidth}
+        \centering
+        \begin{tikzpicture}[->, >=stealth', node distance=3cm, main/.style={circle,draw}]
+            \node[main] (1) {$S_1$};
+            \node[main] (2) [right of=1] {$S_2$};
+            \node[main] (3) [below of=1] {$S_3$};
+            \node[main] (4) [below of=2] {$S_4$};
+        
+            \draw (1) to node[left] {$\frac{1}{2}$} (3);
+            \draw (1) to node[above, pos=0.3] {$\frac{1}{2}$} (4);
+            \draw (2) to node[above] {1} (1);
+            \draw (3) to node[below, pos=0.3] {1} (2);
+            \draw (4) to node[right] {1} (2);
+        \end{tikzpicture}
+        \caption{(A)}
+    \end{minipage}%
+    \begin{minipage}[b]{0.5\textwidth}
+        \centering
+        \begin{tikzpicture}[->, >=stealth', node distance=2.5cm, main/.style={circle,draw}]
+            \node[main] (1) at (0, 0) {$S_1$};
+            \node[main] (2) at (4, 0) {$S_2$};
+            \node[main] (3) at (2, -3.75) {$S_3$};
+            \node[main] (4) [below of=2] {$S_4$};
+            \node[main] (5) [below of=1] {$S_5$};
+
+            \draw[loop above] (1) to node[above] {0.3} (1);
+            \draw[bend left] (1) to node[above] {0.4} (2);
+            \draw[bend right] (1) to node[left] {0.3} (5);
+
+            \draw[loop above] (2) to node[above] {1} (2);
+
+            \draw[bend left] (3) to node[below] {0.4} (5);
+            \draw[bend right] (3) to node[below] {0.6} (4);
+
+            \draw[bend right] (4) to node[above] {1} (5);
+
+            \draw[bend left] (5) to node[above] {1} (3);
+
+        \end{tikzpicture}
+        \caption{(B)}
+    \end{minipage}
+\end{figure}
+
+For $(A)$ all states are \textit{recurrent}, since if I start on anyone of them I can always return. In addition, all states are \textit{periodic} with a period of 3.
+
+Instead for transition matrix $(B)$, all states are \textit{recurrent} except for the state $S_1$ that is transient since there is a possibility to be able to never return to that state (for example going from $S_1$ to $S_2$ or to $S_5$). Also, all states here are \textit{aperiodic} (for example I can return to $S_{3/4/5}$ after any $M \ge 3$) except for $S_4$ since I can return to that state only after $2n+1$ steps (with $n \ge 1)$.
+
+
+\section{Markov chains}
+Consider the Markov chain with transition matrix:
+\[
+P = \begin{pmatrix}
+1/2 & 1/3 & 1/6 \\
+3/4 & 0 & 1/4 \\
+0 & 1 & 0
+\end{pmatrix}
+\]
+\begin{enumerate}
+    \item[(a)] Show that the Markov chain is irreducible and aperiodic.
+    \item[(b)] Suppose the process starts in state 1; find the probability that it is in state 3 after two steps.
+    \item[(c)] Find the matrix which is the limit of \( P^n \) as \( n \to \infty \).
+\end{enumerate}
+
+\subsection{Solution}
+
+\noindent\textbf{(a)} By looking at the graph we can easily see that the Markov chain is irreducible since every node can be reached from every node. Since $S_1$ is aperiodic because of the self-path, then all other states are aperiodic since the chain is irreducible (since there is a path to very node, we can always pass by $S_1$ and do as many loop as we want thus making every node aperiodic).
+
+\begin{center}
+     \begin{tikzpicture}[->, >=stealth', node distance=2.5cm, main/.style={circle,draw}]
+            \node[main] (1) at (0, 0) {$S_1$};
+            \node[main] (2) at (4, 0) {$S_2$};
+            \node[main] (3) at (2, -1.5) {$S_3$};
+
+            \draw[loop above] (1) to node[above] {$\frac{1}{2}$} (1);
+            \draw[bend left] (1) to node[above] {$\frac{1}{3}$} (2);
+            \draw[bend right] (1) to node[left] {$\frac{1}{6}$} (3);
+
+            \draw (2) to node[below, pos=0.7] {$\frac{3}{4}$} (1);
+            \draw[bend left] (2) to node[right] {$\frac{1}{6}$} (3);
+
+            \draw[bend left] (3) to node[left, pos=0.15] {1} (2);
+
+        \end{tikzpicture}
+\end{center}
+
+\noindent\textbf{(b)} By calculating $x^T P^2$ with $x^T=(1, 0, 0)$ we can find the probability to be in $S_3$ after two steps starting in $S_1$:
+
+\renewcommand\arraystretch{1.2}
+\[
+x^TP^2 = (1, 0, 0)\begin{pmatrix}
+1/2 & 1/3 & 1/6 \\
+3/4 & 0 & 1/4 \\
+0 & 1 & 0
+\end{pmatrix}^2 = (1/3, 1/2, 1/6)
+\]
+The probability to be in $S_3$ is 1/6. We can also do it by hand since it's easy in this case: 
+\begin{align}
+    P(S^1_1; S_1^2; S_3^3) = \frac{1}{12} && P(S^1_1; S_2^2; S_3^3) = \frac{1}{12} && P(S^1_1; S_3^2; S_3^3) = 0 \implies P(S^1_1; S^3_3) = \frac{1}{12}+\frac{1}{12}
+\end{align}
+
+\noindent \textbf{(c)} To find $P^n$ it's better to diagonalize $P = QDQ^{-1}$ because then:
+\begin{align}
+    P^n =  (QDQ^{-1})^n = QDQ^{-1}\cdot QDQ^{-1} \dots QDQ^{-1} = QD^nQ^{-1}
+\end{align}
+So let's diagonalize $P$ in $QDQ^{-1}$:
+\renewcommand\arraystretch{1.2}
+\[
+Q = \frac{1}{6}\begin{pmatrix}
+0 & -2 & 6 \\
+-3 & 0 & 6 \\
+6 & 6 & 6 
+\end{pmatrix}
+\quad
+D = \frac{1}{2}\begin{pmatrix}
+-1 & 0 & 0 \\
+0 & 0 & 0 \\
+0 & 0 & 2
+\end{pmatrix}
+\quad
+Q^{-1} = \frac{1}{6}\begin{pmatrix}
+6 & -8 & 2 \\
+-9 & 6 & 3 \\
+3 & 2 & 1
+\end{pmatrix}
+\]
+
+\[
+D^n = \begin{pmatrix}
+-\frac{1}{2^n} & 0 & 0 \\
+0 & 0 & 0 \\
+0 & 0 & 1
+\end{pmatrix}
+\quad
+D^{\infty} = \begin{pmatrix}
+0 & 0 & 0 \\
+0 & 0 & 0 \\
+0 & 0 & 1
+\end{pmatrix}
+\]
+So then
+\[
+P^\infty = QD^{\infty} Q^{-1} = \frac{3}{16}\begin{pmatrix}
+3 & 2 & 1 \\
+3 & 2 & 1 \\
+3 & 2 & 1
+\end{pmatrix}
+\]
+We can test that
+\[
+PP^\infty = \frac{1}{12} \begin{pmatrix}
+6 & 4&2 \\
+9&0&3 \\
+0&12&0
+\end{pmatrix}
+\frac{3}{16}\begin{pmatrix}
+3 & 2 & 1 \\
+3 & 2 & 1 \\
+3 & 2 & 1
+\end{pmatrix} =
+\frac{3}{16}\begin{pmatrix}
+3 & 2 & 1 \\
+3 & 2 & 1 \\
+3 & 2 & 1
+\end{pmatrix}
+\]
+
+\section{Markov chains}
+Two boxes, A and B, contain 2 white and 3 red balls, respectively. At each time, one extracts one ball from each box and puts it back in the opposite box (1 event). Let us call $a_1$ the state corresponding to the number $i$ of red balls in box A. Determine the occurrence probability of state $a_2$ after 3 events and in the limit of many events.
+
+\subsection{Solution}
+We assume that there is a typo and $a_i$ (and not $a_1$) is the state corresponding to the number $i$ of red balls in box A. So $a_2$ is the state when there are 2 red balls in A.
+We start by calculating the transition probability (where ``$\circ;\bullet$'' means ``I drew a white ball from A and a red ball from B''):
+\begin{align}
+    \text{For state $a_0$:} \quad \quad &P(a_0 \rightarrow a_1) =  P(\circ;\bullet|a_0) = 1\quad \quad\quad\quad\quad P(a_0 \rightarrow a_{i\neq 1}) = 0\\
+    \text{For state $a_1$:}\quad \quad &P(a_1 \rightarrow a_0) =  P(\bullet;\circ|a_1) = \frac{1}{2}\cdot\frac{1}{3}= \frac{1}{6}\\
+    & P(a_1 \rightarrow a_1) = P(\bullet;\bullet|a_1) + P(\circ;\circ|a_1) = \frac{1}{2}\cdot\frac{2}{3} + \frac{1}{2}\cdot\frac{1}{3} = \frac{1}{2}\\
+    &P(a_1 \rightarrow a_2) =  P(\circ;\bullet|a_1) = \frac{1}{3}\\
+    \text{For state $a_2$:}\quad \quad &P(a_2 \rightarrow a_0) = 0\\
+    &P(a_2 \rightarrow a_1) =  P(\bullet;\circ|a_2) = \frac{2}{3}\\
+    &P(a_2 \rightarrow a_2) =  P(\bullet;\bullet|a_2) = \frac{1}{3}
+\end{align}
+From which we can get the transition matrix and the directed graph:
+\begin{figure}[htbp]
+    \begin{minipage}[b]{0.5\textwidth}
+        \centering
+        \[
+        P =\begin{pmatrix}
+        0 & 1 & 0 \\
+        1/6 & 1/2 & 1/3 \\
+        0 & 2/3 & 1/3
+        \end{pmatrix}=\frac{1}{6}
+        \begin{pmatrix}
+        0 & 6 & 0 \\
+        1 & 3 & 2 \\
+        0 & 4 & 2
+        \end{pmatrix}
+        \]
+        % \caption{(A)}
+    \end{minipage}%
+    \begin{minipage}[b]{0.5\textwidth}
+        \centering
+        \begin{tikzpicture}[->, >=stealth', node distance=2.5cm, main/.style={circle,draw}]
+            \node[main] (1) {$a_1$};
+            \node[main] (2) [right of=1] {$a_2$};
+            \node[main] (3) [right of=2] {$a_3$};
+
+            \draw[bend left] (1) to node[above] {1} (2);
+
+            \draw[bend left] (2) to node[below] {1/6} (1);
+            \draw[loop above] (2) to node[above] {1/2} (2);
+            \draw[bend left] (2) to node[above] {1/3} (3);
+            
+            \draw[bend left] (3) to node[below] {2/3} (2);
+            \draw[loop above] (3) to node[above] {1/3} (3);
+        \end{tikzpicture}
+        % \caption{(B)}
+    \end{minipage}
+\end{figure}
+
+To get the probability to go from state $a_0$ to state $a_2$ in three steps, we calculate $x^TP^3$ where $x^T=(1, 0, 0)$:
+\[
+P^3 = \begin{pmatrix}
+        0 & 1 & 0 \\
+        1/6 & 1/2 & 1/3 \\
+        0 & 2/3 & 1/3
+    \end{pmatrix}^3 = \frac{1}{216}
+    \begin{pmatrix}
+        18 & 138 & 60 \\
+        23 & 127 & 66 \\
+        20 & 132 & 64
+    \end{pmatrix}\implies (1, 0, 0)P^3 = \left(\frac{3}{36}, \frac{23}{36}, \frac{10}{36}\right)
+\]
+From which we get the probability of $\frac{10}{36}$. Instead if we want the probability in the limit of many events we need to diagonalize to raise the matrix to the power of $n$ as before:
+\renewcommand\arraystretch{1.2}
+\[
+P = QDQ^{-1}\quad \text{where}\quad
+Q = \frac{1}{4}
+\begin{pmatrix}
+12 & -6 & 4 \\
+4 & -1 & 4 \\
+4 & 4 & 4
+\end{pmatrix}
+\quad
+D = \frac{1}{6}\begin{pmatrix}
+-2 & 0 & 0 \\
+0 & 1 & 0 \\
+0 & 0 & 6
+\end{pmatrix}
+\quad
+Q^{-1} = \frac{1}{30}\begin{pmatrix}
+5 & -10 & 5 \\
+-8 & -8 & 16 \\
+3 & 18 & 9
+\end{pmatrix}
+\]
+from which
+\[
+D^n = \begin{pmatrix}
+-\frac{1}{3^n} & 0 & 0 \\
+0 & -\frac{1}{6^n} & 0 \\
+0 & 0 & 1
+\end{pmatrix}
+\quad
+D^{\infty} = \begin{pmatrix}
+0 & 0 & 0 \\
+0 & 0 & 0 \\
+0 & 0 & 1
+\end{pmatrix}
+\]
+So then
+\[
+P^\infty = QD^{\infty} Q^{-1} = \frac{1}{10}\begin{pmatrix}
+1 & 6 & 3 \\
+1 & 6 & 3 \\
+1 & 6 & 3 \\
+\end{pmatrix}
+\]
+So if we start in the state $a_0$, the probability of being in state $a_2$ in the limit of many events is:
+\[
+(1, 0, 0)P^\infty = (1/10, 6/10, 3/10) \implies P(a_2^{\infty}|a_0^0) = 3/10
+\]
+
+\end{document}

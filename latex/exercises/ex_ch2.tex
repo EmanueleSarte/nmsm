@@ -1,0 +1,55 @@
+\documentclass[../main.tex]{subfiles}
+\begin{document}
+\chapter{Exercises Lecture 2}
+
+\section{Rejection method}
+Use the rejection method to generate random numbers that are distributed according to the pdf 
+\begin{align}
+    f(x) = A_f e^{-8 \left(\frac{x^2}{2} + \frac{x^4}{4} \right)}
+\end{align}
+where
+\begin{align}
+    \int_{-\infty}^{+\infty} f(x) \, dx = \frac{e}{\sqrt{2}} \, K_{1/4}(1)
+\end{align}
+and $ K_{1/4}$ denotes the modified Bessel function of the second kind.
+
+\subsection{Solution}
+We assume the $A_f$ is the normalization constant, so $A_f = \frac{\sqrt{2}}{e\ K_{1/4}(1)}$. Now we need to find an easier PDF $g(x)$ such that $c\cdot g(x) > f(x)$. If we choose $g(x)$ as $\mathcal{N}(0, 0.35)$ we have that:
+\begin{align}
+   g(x) = \frac{1}{\sqrt{2\pi\sigma^2}} e^{-\frac{x^2}{2\sigma^2}} = \frac{1}{\sqrt{0.245\pi}} e^{-\frac{x^2}{0.245}}
+\end{align}
+Now we need to find $c$ such that $c\cdot g(x) > f(x)$ (with $c$ not too far from 1):
+\begin{align}
+   c\cdot g(x) > f(x) \implies \log{\frac{c}{\sqrt{0.245\pi}}} -\frac{x^2}{0.245} > \log{\frac{\sqrt{2}}{e\ K_{1/4}(1)}} - 8 \left(\frac{x^2}{2} + \frac{x^4}{4} \right)
+\end{align} by setting $C = \frac{c}{\sqrt{0.245\pi}}$ and $B = \frac{\sqrt{2}}{e\ K_{1/4}(1)}$ and rearranging the terms:
+
+\begin{align}
+  2x^4 + x^2\left(4 - \frac{1}{0.245}\right) > \log{\frac{B}{C}}
+\end{align}since the left term is always positive or zero, then
+\begin{align}
+  \log{\frac{B}{C}} < 0 \implies B < C \implies \frac{\sqrt{2}}{e\ K_{1/4}(1)} <  \frac{c}{\sqrt{0.245\pi}} \implies c \gtrsim 1.06
+\end{align} so we choose $c=1.1$. In figure \ref{fig: ex_2_1_comparison} we show the difference between the two PDFs.
+
+\begin{figure}[ht!]
+    \centerline{\includesvg[width=0.75\columnwidth]{/imgs/ex_2_1_comparison.svg}}
+    \caption{}
+    \label{fig: ex_2_1_comparison}
+\end{figure}
+
+Now we can apply the Rejection sampling. The results are shown in figure \ref{fig: ex_2_1_sampling}. The efficiency of the method ($N_{sampled}/N$) is around $91\%$.
+
+\begin{figure}[ht!]
+    \centerline{\includesvg[width=0.75\columnwidth]{/imgs/ex_2_1_sampling.svg}}
+    \caption{}
+    \label{fig: ex_2_1_sampling}
+\end{figure}
+
+% \begin{wrapfigure}{r}{0.5\textwidth}
+%   \centering
+%   \includesvg[width=0.45\textwidth]{./imgs/ex_2_1_comparison.svg}
+% % \caption{Explanation of the content ..............}
+% \label{fig: ex_2_1_comparison}
+% \end{wrapfigure}
+
+
+\end{document}

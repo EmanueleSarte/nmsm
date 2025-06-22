@@ -1,0 +1,194 @@
+\documentclass[../main.tex]{subfiles}
+\begin{document}
+
+\chapter{Exercises Lecture 11}
+
+\section{Langevin and Brownian Dynamics - Brownian time and length scales (pen\&paper)}
+
+\begin{itemize}
+    \item In the overdamped limit, the diffusion scale becomes the relevant time scale. Using the Stokes-Einstein formula, estimate the time scale of a particle of diameter $\sigma = 10^{-8} \, \text{m}$ to diffuse in water over a distance equal to its own diameter. Is this time scale compatible with the requirement of the Brownian description? (Note: the correlation time of water molecules is of the order of picoseconds, take that as the time scale of the fluctuations $\tau_{coll}$)
+
+    \item Conversely, show that, above $\sigma = 5 \, \mu\text{m}$, Brownian motion becomes negligible. Which other force becomes relevant?
+\end{itemize}
+    (\textit{Hint}: The energy scale is always the thermal energy at room temperature; for simplicity, the object has roughly the same density as water; also, the object is spherical.)
+
+\subsection*{Solution}
+
+The Stokes-Einstein formula is:
+\begin{align}
+    D = \frac{k_B T}{6\pi\eta\ r} = \frac{1.381 \cdot 10^{-23}\text{J/K} \cdot 293 \text{K}}{6 \pi\  (10^{-3}\ \text{Pa}\cdot\text{s})(0.5\cdot 10^{-8} \text{m})} = 4.293\cdot 10^{-11} \frac{\text{m}^2}{\text{s}}
+\end{align} where $\eta$ is the viscosity of water at room temperature, $r = \sigma/2$ and $T=293$ K.
+In the Langevin overdamped case, we have $\langle x^2\rangle = 2Dt$. If we want to know the timescale for the particle to diffuse to a distance of $\sigma$:
+\begin{align}
+    t = \frac{\langle \sigma^2\rangle}{2D} \implies t_{diff}= \frac{ \sigma^2}{2D} = 1.165 \cdot 10^{-6}\text{s}
+\end{align}Since $t_{diff} >> \tau_{coll} \sim 10^{-12}\text{s}$  then the time scale is compatible with the requirement of the Brownian description. If the particle starts to be bigger, its mass starts to be relevant. If the particle is diffusing in 3D and the gravitational pull it's much stronger than the thermal energy then the particle will just sink below (assuming $\rho_{particle} > \rho_{water}$). Let's calculate the change in energy if the particle moves down by $\sigma$:
+\begin{align}
+    \Delta E = mgh = V \rho g \sigma = \frac{4\pi (\sigma/2)^3}{3} \cdot 10^3\frac{\text{kg}}{\text{m}^3} \cdot 9.81 \frac{\text{m}}{\text{s}^2} \sigma = 3.21 \cdot 10^{-18}\text{J}
+\end{align} which compared to the thermal energy $k_B T\approx 4 \cdot 10^{-21}$ J is three order of magnitude bigger.
+
+\newpage
+\section{Langevin and Brownian Dynamics - Brownian motion}
+
+Consider an isolated particle (or an “ideal gas” of non interacting Brownian particles). Set $m=1$, $\sigma=1$ and $\epsilon=1$ as units of mass, length, energy. Set $L=20\sigma$ and apply periodic boundary conditions. Choose initial conditions as you prefer; the most convenient choice is to set all the starting positions in the origin.
+
+\subsection*{Brownian motion in the bulk:}
+
+Simulate this system in the overdamped limit (first order integrator) or in the “underdamped” limit (Stochastic Velocity Verlet or with the second order integrator). Compute the mean square displacement and discuss what happens upon varying the temperature $(0.1<T^{*}<2$, $\gamma=1\tau^{-1})$ and the friction coefficient $(0.1<\gamma\tau<100$, $T^{*}=1)$. Pick 5-10 values in each case. Compare the results with the theory. Further measure the distribution of the displacement of the particle(s) along one axis at different times: what changes to the distribution as time progresses?
+
+\subsection*{Brownian motion in an harmonic trap:}
+
+Consider single overdamped particle (or, again, an ideal gas of non-interacting overdamped particles) in an harmonic trap, centred in a certain point of the box $\vec{r_{c}}$ (for simplicity, choose the origin of the reference frame or the centre of the box).
+
+$$V(r)=\frac{1}{2}K(\vec{r}-\vec{r}_{0})^{2}$$
+
+Set $L=20\sigma$ and apply periodic boundary conditions. Fix the initial conditions in the centre of the trap. Compute the average and the variance of the position along one axis as a function of $0.1<K\sigma^{2}/\epsilon<10$, $0.1<\gamma\tau<100$, $0.1<T^{*}<2$ (Note: when varying one quantity, keep the others fixed to unitary value). Measure both the mean square displacement and the displacement distribution along one axis. Discuss the result, in comparison to the bulk case.
+
+\subsection*{\underline{Solution}}
+We simulated the system in 2D with $L=20\sigma$, periodic boundary conditions, origin in $O=(0, 0)$ and sides extending from 0 to $L$. The simulations consisted of $N=5000$ non-interacting particles in the overdamped (first order integrator) case, with a $\Delta t = 0.01$ and 3000 steps.
+
+\newpage
+\subsubsection*{Brownian motion in bulk}
+In this case we simulated the system in the overdamped limit with 5 different $T^*$ and 5 different $\gamma\tau$. To calculate the mean square displacement while using the periodic boundary condition (PBC), we decide to use the (signed) distance, for each axis, with respect to the origin. Using the raw value of the position introduce discontinuity; going a bit to the left or down from the origin make the position changes $\approx L$. Instead by using the distance (squared) we solve this problem, the extreme values are then $\pm L/2$ (the point $L-\varepsilon$ becomes $-\varepsilon)$. From now on ``mean square displacement'' means this.
+
+\noindent In figure \ref{fig: ex_11_V0_temps} we show the mean squared displacement (from the origin) at different times for the different temperatures (with $\gamma \tau=1$). Each point is the average values of all the particles at that time with that value of temperature. The results are specifically for the x-axis, even if the system was simulated in 2D, but the results are the same for each axis (stochastically speaking), as it should since they are completely independent. We also show, as dotted lines, the theoretical values in the overdamped limit: $\langle (x(t)-x_0)^2\rangle = \frac{2k_B T}{m \gamma}t$. At the start, the curves follow exactly the theoretical values, they grow linearly, and this is expected because our integrator is for the overdamped limit. The particles with higher temperatures tend to move longer in a timestep and thus reaching positions more further away. Later they diverge from the theoretical solution and reach a plateau, this is also expected since our system has periodic boundary conditions. After $x=L/2$ they start to return to the original position and the system will reach equilibrium around a characteristic value (we suppose) related to the size of the system.
+
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}{.85\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_11_V0_temps.svg}
+    \end{subfigure}
+    \caption{Mean squared displacement (calculated using the distance from the origin) for different temperatures with $\gamma\tau$ fixed. There is no potential here. The dotted line is the theoretical one (for the overdamped limit, without PBC).}
+    \label{fig: ex_11_V0_temps}
+\end{figure}
+
+We also show the distribution of the displacement (not squared) at four different time for all the temperatures in figure \ref{fig: ex_11_V0_temps_distr}. Precisely, the histogram contains the data at that particular time of all the $N$ particles at that temperature. We can recognize the shape of a gaussian distribution where lower temperatures mean less variance and higher peaks, but as time increase, because of the PBC, the positions tend to be more and more uniformly distributed and occupy the space evenly.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}{.95\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_11_V0_temps_distrib.svg}
+    \end{subfigure}
+    \caption{Distribution of the mean squared displacement for different temperatures with $\gamma\tau$ fixed for different times. There is no potential here. As time passes, because of the PBC, the distribution tend to flatten and visit every point uniformly.}
+    \label{fig: ex_11_V0_temps_distr}
+\end{figure}
+
+Now we show the same graphs but keeping the temperature constant ($T^*=1$) but changing $\gamma\tau$. The results are in figure \ref{fig: ex_11_V0_gammas} and \ref{fig: ex_11_V0_gammas_distr}. The results are the same as with the temperature except that lower $\gamma\tau$ means bigger steps. In this case without any potential ($F = 0$), the results of $\gamma\tau$ are the same as with $T^*=\frac{1}{\gamma\tau}$ because of the first order integrator formula:
+\begin{align}
+    r(t + \Delta t) = r(t) + \frac{F(r(t))}{m\gamma} \Delta t + \sqrt{\frac{2 k_B T}{m\gamma}} \xi \sqrt{\Delta t}
+\end{align}
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}{.85\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_11_V0_gammas.svg}
+    \end{subfigure}
+    \caption{Mean squared displacement for different $\gamma\tau$'s with temperature fixed. There is no potential here. The dotted line is the theoretical one (for the overdamped limit, without PBC).}
+    \label{fig: ex_11_V0_gammas}
+\end{figure}
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}{.95\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_11_V0_gammas_distrib.svg}
+    \end{subfigure}
+    \caption{Distribution of the mean squared displacement for different $\gamma\tau$'s with temperature fixed for different times. There is no potential here. As time passes, because of the PBC, the distribution tend to flatten and visit every point uniformly.}
+    \label{fig: ex_11_V0_gammas_distr}
+\end{figure}
+
+\clearpage
+
+\subsubsection*{Brownian motion in an harmonic trap}
+In this case the setup is the same as before except now there is an harmonic potential with center in $(0,0)$ which is also the starting position of the particles. So, for different values of the temperatures, $\gamma\tau$'s and $K$'s we calculate the average and the variance of the position along one axis. We report the results in table \ref{tab: ex_11_VHO_res}.
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{ccc|ccc|ccc}
+        \toprule
+        \multicolumn{9}{c}{\textbf{System with harmonic trap, x-position}}\\
+        \midrule
+        \multicolumn{3}{c|}{$K=1$ and $\gamma\tau=1$} & \multicolumn{3}{c|}{$K=1$ and $T^*=1$} & \multicolumn{3}{c}{$T^*=1$ and $\gamma\tau=1$}\\
+        $T^*$&$\langle x\rangle$&$\sigma_x$& $\gamma\tau$ &$\langle x\rangle$&$\sigma_x$& $K$ &$\langle x\rangle$&$\sigma_x$\\
+        \hline
+        0.1    &   -0.000782  &     0.0982  & 0.1   &  0.00123  &  1.05  & 0.1  &  0.00175   &  8.21\\
+        0.575  &   -0.00314   &     0.572   & 0.5   &  0.00239  &  1.00  & 0.2  &  -0.0190   &  4.53\\
+        1.05   &   -0.00747   &     1.03    & 1     &  0.00527  &  0.989 & 0.5  &  0.0111    &  1.95\\
+        1.525  &    0.000610  &     1.51    & 2     & -0.00376  &  0.972 & 1    &  0.00342   &  0.993\\
+        2.0    &   -0.006862  &     1.98    & 10    &  0.0140   &  0.841 & 10   &  -0.000234 &  0.105\\
+        \hline
+    \end{tabular}
+    \caption{The table shows the average and the variance of the }
+    \label{tab: ex_11_VHO_res}
+\end{table}
+The mean value it's always around zero as expected since that's where the center of potential is located and by plotting the position (not squared) we expected random displacements around the potential with mean zero. Instead, the variance changes a lot based on the value of the parameters, high temperatures, low $\gamma$s and low $K$s mean higher variance. This is also expected because respectively higher energy, lower friction and lower recalling force make the particles roam more, the opposite instead make the particles locked in place. This behaviors can also be seen in the images of the mean square displacement and its distribution over time (along one axis) for all three parameters in the following figures.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}{.85\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_11_VHO_temps.svg}
+    \end{subfigure}
+    \caption{Mean squared displacement for different temperatures with $\gamma\tau$ and $K$ fixed.}
+    \label{fig: ex_11_VHO_temps}
+\end{figure}
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}{.99\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_11_VHO_temps_distrib.svg}
+    \end{subfigure}
+    \caption{Distribution of the mean squared displacement for different $\gamma\tau$'s and $K$s with temperature fixed for different times. As time passes, even of the PBC, the distribution stays the same because the particles are confined in a small region around the potential.}
+    \label{fig: ex_11_VHO_temps_distrib}
+\end{figure}
+In case where the temperature changes (figure \ref{fig: ex_11_VHO_temps} and \ref{fig: ex_11_VHO_temps_distrib}), the recalling harmonic force even with $K=1$ is very strong. In fact, comparing these images with the one of the previous case, we see that the particles moves a lot less, reaching plateau values a lot smaller than before. This also mean that the distribution does not feel the PBC at all and it stays  the same through time.
+
+\begin{figure}[!p]
+    \centering
+    \begin{subfigure}{.99\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_11_VHO_gammas.svg}
+    \end{subfigure}
+    \caption{Mean squared displacement for different $\gamma\tau$s with $T$ and $K$ fixed.}
+    \label{fig: ex_11_VHO_gammas}
+\end{figure}
+\begin{figure}[!p]
+    \centering
+    \begin{subfigure}{.95\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_11_VHO_gammas_distrib.svg}
+    \end{subfigure}
+    \caption{Distribution of the mean squared displacement for different $\gamma\tau$s with $T$ and $K$ fixed for different times.}
+    \label{fig: ex_11_VHO_gammas_distrib}
+\end{figure}
+
+Instead if we change the friction coefficient (figure \ref{fig: ex_11_VHO_gammas} and \ref{fig: ex_11_VHO_gammas_distrib}), the harmonic trap keeps the particles at a fixed distance, but higher friction values make the reaching of that stable distance harder. The particles with higher friction coefficient are harder to move, but given enough time they also stabilize around the same distance from the center of the potential and match the distribution of the others.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}{.99\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_11_VHO_ks.svg}
+    \end{subfigure}
+    \caption{Mean squared displacement for different $K$s with $T$ and $\gamma\tau$ fixed.}
+    \label{fig: ex_11_VHO_ks}
+\end{figure}
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}{.99\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_11_VHO_ks_distrib.svg}
+    \end{subfigure}
+    \caption{Distribution of the mean squared displacement for different $K$s with $T$ and $\gamma\tau$ fixed for different times.}
+    \label{fig: ex_11_VHO_ks_distrib}
+\end{figure}
+
+Lastly, by changing the recalling force coefficient (figure \ref{fig: ex_11_VHO_ks} and \ref{fig: ex_11_VHO_ks_distrib}) make the the equilibrium point around the center of the potential different. Higher pull, smaller distance of attraction. Also in this case the PBC does not change the outcomes. In fact we can see that the average distance squared reached by the case with $K=0.1$ is still far less than the ones reached when $V=0$.
+
+An animation can be found on \href{https://github.com/EmanueleSarte/nmsm/blob/main/ex11/README.md}{GitHub}.
+
+\end{document}

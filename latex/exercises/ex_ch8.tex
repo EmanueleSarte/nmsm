@@ -1,0 +1,84 @@
+\documentclass[../main.tex]{subfiles}
+\begin{document}
+\chapter{Exercises Lecture 8}
+
+
+\section{Off-lattice Monte Carlo simulations - Reduced Units (pen \& paper)}
+Typical sets of parameters for Argon and Krypton are $\sigma_{Ar} = 3.41$\r{A}, $\sigma_{Kr} = 3.38$\r{A} for their typical size and $\varepsilon_{Ar}/k_B = 119.8 \, \text{K}$ and $\varepsilon_{Kr}/k_B = 164.0 \, \text{K}$.
+
+\begin{itemize}
+    \item At the reduced temperature $T^* = 2$, what is the temperature of Argon in Kelvin?
+    \item A typical value of the integration time step for MD is $\Delta t = 0.001 \tau$. Convert it into SI units for Argon and Krypton.
+\end{itemize}
+\subsection{Solution}
+
+Since $T = E/k_B$ then:
+\begin{align}
+    T^* = \frac{T}{\overline{T}} = \frac{T}{\varepsilon/k_B} \implies T=\frac{\varepsilon}{k_B}T^*
+\end{align}
+Since we have $\varepsilon{Ar}/k_B = 119.8$ and $T^*=2$ then $T_{Ar} = 239.6$K. For the Kripton instead $T_{Kr} = 328$K.
+
+About the reduced time $\tau$, this can be obtained by using the other units: $\tau=\sigma\sqrt{\overline{m}/\varepsilon}$, but we still need the unit mass $\overline{m}$. We choose as the unit mass the atomic mass of the nuclei. So, we get $\overline{m}_{Ar} = 39.95u$ and $\overline{m}=83.80u$ with $u=1.661\cdot 10^{-27}$. Putting these inside the formula for $\tau$ we get:
+\begin{align}
+    \tau_{Ar} &= \sigma_{Ar}\sqrt{\overline{m_{Ar}}/\varepsilon_{Ar}} = 3.41\cdot 10^{-10}\text{m}\sqrt{\frac{39.95\cdot 1.661\cdot 10^{-27}\text{kg}}{119.8\text{K} \cdot 1.381\cdot 10^{-23}\text{J/K}}} = 2.16\cdot10^{-12}\ \text{s}\\
+    \tau_{Kr} &= \sigma_{Kr}\sqrt{\overline{m_{Kr}}/\varepsilon_{Kr}} = 3.38\cdot 10^{-10}\text{m}\sqrt{\frac{83.80\cdot 1.661\cdot 10^{-27}\text{kg}}{164.0\text{K} \cdot 1.381\cdot 10^{-23}\text{J/K}}} = 2.65\cdot10^{-12}\ \text{s}\\
+\end{align}
+So in the end $\Delta t_{Ar} = 2.16\cdot10^{-15}$s and $\Delta t_{Kr} = 2.65\cdot10^{-15}$s.
+
+\newpage
+
+\section{Off-lattice Monte Carlo simulations - Lennard-Jones}
+The Lennard-Jones interaction is a paradigmatic interaction potential, used in different contexts. It reads
+\begin{equation}
+V_{LJ}(r) =
+\begin{cases}
+4\epsilon \left[ \left( \frac{\sigma}{r} \right)^{12} - \left( \frac{\sigma}{r} \right)^{6} \right] & \text{for } r < \sigma_{cut} \\
+0 & \text{for } r \geq \sigma_{cut}
+\end{cases}
+\end{equation}
+where $\sigma=1$, $\epsilon=1$ are the units of length and energy and $\sigma_{cut}$ is the so-called cut-off length and is set, for this exercise, to half the box size. Beyond this cut-off, we introduce two tail corrections: one for the energy (per particle)
+\begin{equation}
+u^{tail} = \frac{8}{3} \pi \rho \left[ \frac{1}{3} \left( \frac{\sigma}{\sigma_{cut}} \right)^{9} - \left( \frac{\sigma}{\sigma_{cut}} \right)^{3} \right]
+\end{equation}
+and one for the pressure
+\begin{equation}
+P^{tail} = \frac{16}{3} \pi \rho^2 \left[ \frac{2}{3} \left( \frac{\sigma}{\sigma_{cut}} \right)^{9} - \left( \frac{\sigma}{\sigma_{cut}} \right)^{3} \right]
+\end{equation}
+Write a simple Monte Carlo code, following the scheme detailed in class. Perform two sets of simulations, one at reduced temperature $T^*=2$ (above the critical temperature) and one at $T^*=0.9$ (well below the critical temperature) an compute, for both cases, the equation of state in the pressure-density plane. Compare the results with the equation of state for the two temperature (data shared).
+
+\subsection{Solution}
+
+The implementation is the usual MC + Metropolis simulation. For each Metropolis sweep we visit each particle in order and propose a move. A proposed move consist on increasing each coordinate by a value $\sim\mathcal{N}[-d_{max}, d_{max}]$ (for all three dim. independently) with $d_{max} = 0.5$ and accepting it with the usual Metropolis rule. To calculate the $\Delta E$ of the proposed move, only the pairs between the current particle and all the others are used (($\mathcal{O}(N)$), as opposed to calculate the energy for the whole system ($\mathcal{O}(N^2)$). 
+
+The pressure was calculated as:
+\begin{align}
+    PV &= Nk_B T - \frac{1}{3}\sum_{i}^N <\overrightarrow{r}_{i}, \overrightarrow{F}_{i}> =  Nk_B T - \frac{1}{3}\sum_{i < j}^N <\overrightarrow{r}_{ij}, -\frac{dV(r_{ij})}{dr_{ij}}\overrightarrow{u_{ij}}>  \\
+    &= Nk_B T - 8\epsilon\left[ \left( \frac{\sigma}{r} \right)^{6} - 2\left( \frac{\sigma}{r} \right)^{12} \right] 
+\end{align}
+
+The initial position is chosen at random by sampling uniformly inside the box. This could lead to particle starting very close with $V_{LJ}(r)$ very high and pressures very high. To avoid including these ludicrous values, we simply discarded the first 500 values of the pressure when calculating the mean.
+To improve performance, the distance is always calculated squared. There is no need to calculate the square root of it because since it is monotone, every comparison can be done on the squared values. Also in every formula the distance is always to an even power, so if we have $r^2$, then $\left( \frac{\sigma}{r} \right)^{6} = \left( \frac{\sigma^2}{r^2} \right)^{3}$.
+
+For every point of pressure $\rho$ given in the data shared, we set $N=200$ and we calculate the corresponding volume with $V=N/\rho$. From which $\sigma_{cut} = \sqrt[3]{V} / 2$. The final results are shown in figure \ref{fig: ex_8}.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{.6\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_8_lowT.svg}
+    \end{subfigure}
+    \begin{subfigure}{.39\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_8_lowT_zoom.svg}
+    \end{subfigure}
+        \begin{subfigure}{.6\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_8_highT.svg}
+    \end{subfigure}
+    \caption{The pressure versus density plots. The first row shows the case for $T^*=0.9$ with a zoomed in version, the second row the case for $T^*=2$. The former case has different lines for different $N$ because we wanted to show if the situation could be improved with more particles, instead for the latter case there is no need because the data is already in excellent agreement.}
+    \label{fig: ex_8}
+\end{figure}
+
+In the first row of the figure, with $T^*=0.9$, the data simulated do not agree at all with the data shared, there is even a region with negative pressure. Increasing $N$ does not reduce this region but makes the data closer to the real data in the last area. In the second figure instead, with $T^*=2$, there is excellent agreement (only qualitatively because the low errors $\sqrt{\sigma^2/N}$ are relatively far from the real points). This makes us think that the problem with the first figure it's not caused by an error in the simulation code, but probably that our simple simulation cannot capture the complex phenomena happening with $T <T_c$. Presumably, when $T>T_c$ these phenomena do not happen at all instead of just being less energetic than $k_BT$, so these phenomena are not present at all when we are over the $T_c$. We think that because a phase transition is usually a transition from something ``structured" to something ``unstructured".
+
+\end{document}

@@ -1,0 +1,66 @@
+\documentclass[../main.tex]{subfiles}
+\begin{document}
+
+\chapter*{Exercises Lecture 1}
+
+\section{Sampling random points within D-dimensional domains by hit and miss}
+Use the hit-and-miss method to estimate numerically the volume of an ellipsoid of parameters $a=3$, $b=2$, $c=2$ and plot the deviation of the estimate from the analytic value as a function of the number of throws used.
+Repeat the above procedure to estimate the volume of an ellipsoid of parameters $a=3$, $b=1$, $c=1$. Compare the two results and try to improve the second case if needed.
+
+\subsection{Solution}
+By randomly sampling points in the volume [-a, a] x [-b, b] x [-c, c] we get the figure \ref{fig: ex_1_1}. Each point in the figure is calculated as $|V_{exact} - V_{estimated}|$ where $V_{estimated}$ is the average of 25 runs of hit and miss.
+At $10^7$ points we get:
+\begin{verbatim}
+Exact volume for ellipsoid (3,2,2): 50.2655, best estimate: 50.26699
+Exact volume for ellipsoid (3,1,1): 12.5664, best estimate: 12.56602
+\end{verbatim}
+
+
+\begin{figure}[ht!]
+    \centerline{\includesvg[width=0.95\columnwidth]{/imgs/ex_1_1.svg}}
+    \caption{Sampling results for the estimate of the volume of an ellipsoid.}
+    \label{fig: ex_1_1}
+\end{figure}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+% \begin{wrapfigure}{r}{0.5\textwidth}
+%   \centering
+%   \includesvg[width=0.33\textwidth]{./imgs/ex_1_1.svg}
+% \caption{Explanation of the content ..............}
+% \label{fig:1.1}
+% \end{wrapfigure}
+% %%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\section{Sampling random numbers from a given distribution: inversion method}
+Use the inversion method to generate random numbers with the following PDF:
+\begin{enumerate}
+    \item $\rho(x) = c x e^{-x^2}$, for $x \in \mathbb{R}^+$.
+    \item $\rho(x) = b x^4$, for $x \in [0, 3]$.
+\end{enumerate}
+
+\subsection{Solution}
+First we find the normalization constant by imposing $\int \rho(x)dx = 1$, so we obtain 
+\begin{align}
+\rho_1(x) = 2 x e^{-x^2} && \rho_2(x) = \frac{5}{243}x^4
+\end{align}
+then we calculate the cumulative $F(x)$:
+\begin{align}
+F_1(x) = \int_0^x 2te^{-t^2}dt = 1-e^{-x^2} && F_2(x) = \int_0^3\frac{5}{243}t^4dt = \frac{x^5}{243}
+\end{align}
+and finally we obtain $F^{-1}(y)$ by inverting $F(x)$:
+\begin{align}
+y = 1-e^{-x^2} \implies x = F^{-1}_1(y) = \sqrt{\log{\frac{1}{1-y}}}\ , \text{for } y \in [0, 1) \\
+y = \frac{x^5}{243} \implies x = F^{-1}_2(y) = \sqrt[5]{243y}\ , \text{for } y \in [0, 1]
+\end{align}
+By sampling uniformly $y$ and then calculating $F^{-1}(y)$ it's like sampling $\rho(x)$:
+
+\begin{figure}[ht!]
+    \centerline{\includesvg[width=0.99\columnwidth]{/imgs/ex_1_2.svg}}
+    \caption{Comparison of the sampling with the real pdfs. On the left $\rho_1$, on the right $\rho_2$} 
+    \label{fig: ex_1_2}
+\end{figure}
+\end{document}
+
+

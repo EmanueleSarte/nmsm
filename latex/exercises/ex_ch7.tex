@@ -1,0 +1,64 @@
+\documentclass[../main.tex]{subfiles}
+\begin{document}
+\chapter{Exercises Lecture 7}
+
+
+\section{Gillespie algorithm}
+
+Implement the Gillespie algorithm to simulate the Brusselator model, whose transition rates for a state $C = (X, Y )$ are
+\begin{align}
+w_1 &= a\Omega \quad &\text{for } (X, Y ) \rightarrow (X + 1, Y ) \label{eq: ex7_w1} \\
+w_2 &= X \quad &\text{for } (X, Y ) \rightarrow (X - 1, Y ) \\
+w_3 &= \frac{1}{\Omega^2} X(X - 1)Y \quad &\text{for } (X, Y ) \rightarrow (X + 1, Y - 1) \\
+w_4 &= bX \quad &\text{for } (X, Y ) \rightarrow (X - 1, Y + 1) \label{eq: ex7_w4}
+\end{align}
+Run some simulations using $a = 2$, $b = 5$ and for different volume sizes: $\Omega = 10^2, 10^3, 10^4$. What can one note by varying $\Omega$?
+
+
+\subsection{Solution}
+We implemented the Brussellator with the Gillespie algorithm using $a=2$, $b=5$ and different values of $\Omega$. The initial configuration was $X_0=Y_0=2.5\Omega$. By increasing $\Omega$ we noticed that the $\tau$ (the time for any reaction to occurs next) was decreasing. This makes sense because of how the $\tau$ is calculated, but also because if the volume is bigger more reactions are expected, thus lowering the time between two reactions.  We also noticed that by increasing the volume the oscillation period starts to decrease in the same amount of time.
+
+\noindent The algorithm starts with calculating the rates of the reaction $w_i$ with equation \eqref{eq: ex7_w1} to \eqref{eq: ex7_w4}. Then we calculate $\tau$ of the next reaction as:
+\begin{align}
+    \tau = \frac{1}{\sum_i w_i}\ln{\frac{1}{u}}\quad\text{where}\quad u \sim \mathcal{U}[0, 1]
+\end{align}
+Now that we know when the next reaction will occur, we need to know which one is it. We select the first $k$ for which:
+\begin{align}
+    \sum_{j=0}^k a_j\ > u\sum_i a_i\quad\text{where}\quad u \sim \mathcal{U}[0, 1]
+\end{align}
+The next reaction will be the $k$-th reaction chosen with probability $a_k / \sum_i a_i$. We then increment the time by $t$ and update the current state based on the reaction chosen.
+
+\noindent The results are shown in figure \ref{fig: ex_7}.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{.49\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_7_low_time.svg}
+    \end{subfigure}
+    \begin{subfigure}{.49\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_7_low_xy.svg}
+    \end{subfigure}
+        \begin{subfigure}{.49\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_7_mid_time.svg}
+    \end{subfigure}
+    \begin{subfigure}{.49\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_7_mid_xy.svg}
+    \end{subfigure}
+        \begin{subfigure}{.49\textwidth}
+        \centering
+        \includesvg[width=0.99\columnwidth]{/imgs/ex_7_high_time.svg}
+    \end{subfigure}
+    \begin{subfigure}{.49\textwidth}
+        \centering
+        \includegraphics[width=0.99\columnwidth]{./imgs/ex_7_high_xy.png}
+    \end{subfigure}
+    \caption{We increased the number of samples for different $\Omega= 10^2,\ 10^3\text{  and  }10^4$, specifically $n_{iters}=2000\Omega$. To avoid plotting too many points and to remove all the noise we decided to reduce the number of points with an average. Specifically every $n_{avg}$ points the average is calculated and the result will be used instead of the points.  The lines on the right are colored from black to light gray to show the path. (The last image is not a vector image because of too much points)}
+    \label{fig: ex_7}
+\end{figure}
+
+
+\end{document}
