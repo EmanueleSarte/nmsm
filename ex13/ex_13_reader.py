@@ -62,9 +62,9 @@ def animate_particles(data, types, side, skip=1, dt=0.2):
         if i % 100 == 0 and i:
             print(f"{i}/{tot}")
 
-    # ani = FuncAnimation(fig, update, frames=num_frames, blit=True, interval=200/6)
-    # writermp4 = animation.FFMpegWriter(fps=30)
-    # ani.save("anim.mp4", writer=writermp4, progress_callback=progress, dpi=240)
+    ani = FuncAnimation(fig, update, frames=num_frames, blit=True, interval=200/6)
+    writermp4 = animation.FFMpegWriter(fps=30)
+    ani.save("anim.mp4", writer=writermp4, progress_callback=progress, dpi=200)
     plt.show()
 
 
@@ -133,12 +133,12 @@ def plot_msd_over_time(datas):
 
 
 def main():
-    bname = r""
+    bname = r"\\wsl.localhost\Ubuntu\home\emanuele\nmsm"
     fname = bname + "\\" + "stats_ex13_nsim6_M20000.bin"
     datas = read_binary_data(fname)
     print("Data Loaded")
 
-    animate_particles(datas[5][2][:], datas[5][1], 100, skip=10)
+    animate_particles(datas[4][2][:], datas[4][1], 100, skip=10)
     # plot_msd_over_time(datas)
 
 

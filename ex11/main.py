@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import animation
 from matplotlib.animation import FuncAnimation
 
 
@@ -13,19 +14,11 @@ def diff_pbc(data, side):
     return np.where(ydiff > side2, ydiff - side, np.where(ydiff < -side2, side - ydiff, ydiff))
 
 
-# def get_distance_pbc(data, side):
-#     data_pbc = data - np.round(data / side) * side
-#     if len(data.shape) >= 2:
-#         return np.linalg.norm(data_pbc, axis=-1)
-#     else:
-#         return data_pbc
-
-
 class LangevinIntegrator:
     NO_POTENTIAL = 0
     HARMONIC_POT = 1
 
-    def __init__(self, niters: int, rep: int, dt, side, gammas=None, temps=1, ks=1):
+    def __init__(self, niters: int, rep: int, dt, side, gammas=None, temps=1, ks=1, initial_pos=None, v_center=None):
 
         self.niters = niters
         self.rep = rep
@@ -33,6 +26,9 @@ class LangevinIntegrator:
         self.ndim = 2
         self.potential = self.NO_POTENTIAL
         self.k = ks
+
+        self.initial_pos = [0, 0] if initial_pos is None else initial_pos
+        self.v_center = np.array([0, 0] if v_center is None else v_center)
 
         self.gamma = gammas
         self.temp = temps
@@ -49,10 +45,7 @@ class LangevinIntegrator:
 
     def run_simulation(self):
         states = np.empty((self.niters, self.rep, self.nvals, self.ndim))
-        # displacements = np.empty((self.niters - 1, self.rep, self.nvals, self.ndim))
-        # states[0, ...] = np.ones(shape=(self.rep, self.nvals, self.ndim)) * (self.side / 2)
-        # states[0, ...] = np.ones(shape=(self.rep, self.nvals, self.ndim))
-        states[0, ...] = np.zeros(shape=(self.rep, self.nvals, self.ndim))
+        states[0, ..., :] = np.ones(shape=(self.rep, self.nvals, self.ndim)) * self.initial_pos
 
         const_term = np.sqrt(2 * self.temp * self.dt / (self.m * self.gamma)).reshape(-1, 1)
         if isinstance(self.gamma, np.ndarray):
@@ -64,24 +57,19 @@ class LangevinIntegrator:
             noise = np.random.normal(size=states[0].shape)
             force_term = self.get_force(states[i - 1])
             states[i] = states[i - 1] + noise * const_term + force_term * const_term2
-            # displacements[i - 1] = states[i] - states[i - 1]
             states[i] = self.apply_pbc(states[i])
 
-        # return states, displacements
         return states
 
     def apply_pbc(self, state):
         return apply_pbc(state, self.side)
-
-    # def get_distance_pbc(self, state):
-    #     return get_distance_pbc(state, self.side)
 
     def get_force(self, state):
         if self.potential == self.NO_POTENTIAL:
             return np.zeros_like(state)
 
         elif self.potential == self.HARMONIC_POT:
-            center = np.array([0, 0])
+            center = self.v_center
             distance = (state - center)
             distance = distance - np.round(distance / self.side) * self.side
             return -self.k.reshape(-1, 1) * distance
@@ -97,13 +85,12 @@ class LangevinIntegrator:
 
 
 def plot(data):
-    # times = np.arange(len(data)) * 0.001
-
     plt.figure()
     plt.plot(data[:, 0], data[:, 1])
     plt.show()
 
 
+# not used
 def plot_displ_distrib(pos, displacements, side, temps, gammas, ks):
     nvals = pos.shape[-2]
 
@@ -184,7 +171,8 @@ def plot_displac_distrib_over_time(data, N, values, dt):
         if (k % 2) == 0:
             ax.set_ylabel("Mean Squared X-Disp")
 
-    plt.suptitle("Mean Squared X-Displacement with PBC, " + rf"$T^*=1$, $\gamma\tau=1$, $V=-Kx^2$, avg of N={N} particles")
+    plt.suptitle(
+        "Mean Squared X-Displacement with PBC, " + rf"$T^*=1$, $\gamma\tau=1$, $V=-Kx^2$, avg of N={N} particles")
 
     plt.tight_layout(pad=1, w_pad=0.25, h_pad=1)
     plt.show()
@@ -200,8 +188,8 @@ def plot_msd_over_time(data, N, values, dt):
     for i in range(nvals):
         time = np.arange(ndata) * dt
         yx = data[:, :, i, 0]
-        # dist_no_squared = (yx - np.round(yx / 20) * 20)
-        # print(f"{values[i]:.6f} {dist_no_squared.mean():.6f} {dist_no_squared.var():.6f}")
+        dist_no_squared = (yx - np.round(yx / 20) * 20)
+        print(f"{values[i]:.6f} {dist_no_squared.mean():.6f} {dist_no_squared.var():.6f}")
         msdx = ((yx - np.round(yx / 20) * 20) ** 2).mean(axis=-1)
         # msdx = ((yx - np.round(yx / 20) * 20)).mean(axis=-1)
 
@@ -227,15 +215,15 @@ def animate_particles(data, side, ks):
     if not isinstance(ks, np.ndarray):
         ks = [ks]
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(4.5, 4.5))
     # max_val = np.max(np.abs(data[:, :, 1:]))
     ax.set_xlim(0, side)
     ax.set_ylim(0, side)
     ax.set_aspect('equal')
 
     colors = [f"C{i}" for i in range(num_particles)]
-    scatter = ax.scatter(data[0, :, 0], data[0, :, 1], c=colors, s=70)
-    tails = [ax.plot([], [], color=colors[i], lw=2, zorder=-1)[0] for i in range(num_particles)]
+    scatter = ax.scatter(data[0, :, 0], data[0, :, 1], c=colors, s=70, zorder=4)
+    tails = [ax.plot([0], [0], color=colors[i], lw=2, zorder=3)[0] for i in range(num_particles)]
 
     delta = 0.02
     xgrid = np.arange(0, side, delta)
@@ -251,9 +239,17 @@ def animate_particles(data, side, ks):
         for i, tail in enumerate(tails):
             tail.set_xdata(data[start:frame, i, 0])
             tail.set_ydata(data[start:frame, i, 1])
+
         return scatter, *tails
 
-    ani = FuncAnimation(fig, update, frames=num_frames, blit=True, interval=30)
+    def progress(i, tot):
+        if i % 100 == 0 and i:
+            print(f"{i}/{tot}")
+
+    ani = FuncAnimation(fig, update, frames=num_frames, blit=True, interval=1000/30)
+    writermp4 = animation.FFMpegWriter(fps=30)
+    filename = "animation.mp4"
+    ani.save(filename, writer=writermp4, progress_callback=progress, dpi=240)
     plt.show()
 
 
@@ -269,14 +265,15 @@ def main():
     ks = np.array([0.1, 0.2, 0.5, 1, 10])
 
     rep = 5000
-    lang_od_temps = LangevinIntegrator(niters=3000, rep=rep, side=side, ks=ks, dt=dt, gammas=gammas, temps=temps)
+    lang_od_temps = LangevinIntegrator(niters=3000, rep=rep, side=side, ks=ks, dt=dt, gammas=gammas, temps=temps, initial_pos=[10, 5], v_center=[10, 10])
     lang_od_temps.potential = LangevinIntegrator.HARMONIC_POT
     states = lang_od_temps.run_simulation()
+    print("simulation ended")
 
-    plot_msd_over_time(states, rep, ks, dt)
-    plot_displac_distrib_over_time(states, rep, ks, dt)
+    # plot_msd_over_time(states, rep, ks, dt)
+    # plot_displac_distrib_over_time(states, rep, ks, dt)
 
-    # animate_particles(states[:, 0, :, :], side, ks)
+    animate_particles(states[:1000, 0, :, :], side, ks)
 
 
 main()
